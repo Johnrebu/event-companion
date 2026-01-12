@@ -1,7 +1,8 @@
 import { EventDetails } from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, MapPin, Phone, Sparkles } from "lucide-react";
+import { Calendar, MapPin, Phone } from "lucide-react";
+import ainionLogo from "@/assets/aionion-logo.png";
 
 interface EventHeaderProps {
   eventDetails: EventDetails;
@@ -15,13 +16,13 @@ const EventHeader = ({ eventDetails, onChange }: EventHeaderProps) => {
 
   return (
     <div className="bg-header-gradient rounded-xl p-6 text-primary-foreground shadow-lg">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-primary-foreground/20 rounded-lg">
-          <Sparkles className="h-6 w-6" />
+      <div className="flex items-center gap-4 mb-6">
+        <div className="bg-primary-foreground rounded-lg p-2">
+          <img src={ainionLogo} alt="Aionion Capital" className="h-10 w-auto" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Aionion</h1>
-          <p className="text-primary-foreground/80 text-sm">Event Management</p>
+          <h1 className="text-2xl font-bold">Aionion Capital</h1>
+          <p className="text-primary-foreground/80 text-sm">Event Expense Report</p>
         </div>
       </div>
 
