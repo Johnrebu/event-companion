@@ -73,6 +73,10 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          foreground: "hsl(var(--gold-foreground))",
+        },
       },
       backgroundImage: {
         'header-gradient': 'linear-gradient(135deg, hsl(var(--header-gradient-from)), hsl(var(--header-gradient-to)))',
