@@ -133,3 +133,39 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-report {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: white !important;
+    padding: 20mm !important;
+    margin: 0 !important;
+  }
+
+  .print-report table {
+    page-break-inside: avoid;
+  }
+
+  .print-report tr {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}

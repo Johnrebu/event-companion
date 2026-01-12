@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ExpenseItem, EventDetails } from "@/types/expense";
 import EventHeader from "@/components/EventHeader";
 import ExpenseTable from "@/components/ExpenseTable";
 import TotalSummary from "@/components/TotalSummary";
 import Calculator from "@/components/Calculator";
 import CalculatorButton from "@/components/CalculatorButton";
+import PrintReport from "@/components/PrintReport";
 import { Button } from "@/components/ui/button";
-import { Download, Save, FileText } from "lucide-react";
+import { Download, Save, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 const createEmptyItem = (sNo: number): ExpenseItem => ({
@@ -36,6 +37,7 @@ const Index = () => {
 
   const [gstPercentage, setGstPercentage] = useState(18);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const handleItemChange = (updatedItem: ExpenseItem) => {
     setItems(items.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
@@ -111,6 +113,65 @@ const Index = () => {
     toast.success("Report exported successfully!");
   };
 
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    if (!printContent) return;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Please allow popups for printing");
+      return;
+    }
+
+    const styles = Array.from(document.styleSheets)
+      .map((styleSheet) => {
+        try {
+          return Array.from(styleSheet.cssRules)
+            .map((rule) => rule.cssText)
+            .join("");
+        } catch (e) {
+          return "";
+        }
+      })
+      .join("");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Expense Report - ${eventDetails.eventName || "Event"}</title>
+          <style>
+            ${styles}
+            body { 
+              margin: 0; 
+              padding: 0; 
+              background: white !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            @media print {
+              @page { size: A4; margin: 10mm; }
+              body { background: white !important; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+
+    toast.success("Print dialog opened!");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -122,9 +183,13 @@ const Index = () => {
               <Save className="h-4 w-4" />
               Save Draft
             </Button>
-            <Button variant="default" onClick={handleExport} className="gap-2">
+            <Button variant="outline" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
               Export CSV
+            </Button>
+            <Button variant="default" onClick={handlePrint} className="gap-2">
+              <Printer className="h-4 w-4" />
+              Print / PDF
             </Button>
           </div>
 
@@ -156,6 +221,16 @@ const Index = () => {
         isOpen={isCalculatorOpen}
         onClose={() => setIsCalculatorOpen(false)}
       />
+
+      {/* Hidden Print Report */}
+      <div className="hidden">
+        <PrintReport
+          ref={printRef}
+          eventDetails={eventDetails}
+          items={items}
+          gstPercentage={gstPercentage}
+        />
+      </div>
     </div>
   );
 };
