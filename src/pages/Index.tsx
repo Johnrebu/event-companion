@@ -123,17 +123,9 @@ const Index = () => {
       return;
     }
 
-    const styles = Array.from(document.styleSheets)
-      .map((styleSheet) => {
-        try {
-          return Array.from(styleSheet.cssRules)
-            .map((rule) => rule.cssText)
-            .join("");
-        } catch (e) {
-          return "";
-        }
-      })
-      .join("");
+    // Get computed logo URL or use a data URI
+    const logoImg = printContent.querySelector('img');
+    const logoSrc = logoImg?.src || '';
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -141,33 +133,166 @@ const Index = () => {
         <head>
           <title>Expense Report - ${eventDetails.eventName || "Event"}</title>
           <style>
-            ${styles}
+            * { box-sizing: border-box; margin: 0; padding: 0; }
             body { 
-              margin: 0; 
-              padding: 0; 
-              background: white !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              padding: 24px;
+              background: white;
+              color: #111;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
+            .print-report { max-width: 800px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
+            .header-left { display: flex; align-items: center; gap: 16px; }
+            .header-left img { height: 64px; width: auto; }
+            .header-left h1 { font-size: 24px; font-weight: bold; color: #111827; }
+            .header-left p { font-size: 14px; color: #4b5563; }
+            .header-right { text-align: right; font-size: 14px; color: #4b5563; }
+            .header-right .bold { font-weight: 600; }
+            .section { margin-bottom: 24px; }
+            .section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #1f2937; }
+            .details-box { background: #f9fafb; padding: 16px; border-radius: 8px; }
+            .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px; }
+            .details-grid .label { color: #6b7280; }
+            .details-grid .value { margin-left: 8px; font-weight: 500; }
+            table { width: 100%; border-collapse: collapse; font-size: 14px; }
+            th { background: #1f2937; color: white; padding: 8px 12px; text-align: left; border: 1px solid #d1d5db; }
+            th.right { text-align: right; }
+            th.center { text-align: center; }
+            td { padding: 8px 12px; border: 1px solid #d1d5db; }
+            td.right { text-align: right; }
+            td.center { text-align: center; }
+            tr:nth-child(even) { background: #f9fafb; }
+            .income { color: #15803d; font-weight: 500; }
+            .expense { color: #b91c1c; font-weight: 500; }
+            .summary-box { background: #f9fafb; padding: 16px; border-radius: 8px; width: 320px; margin-left: auto; }
+            .summary-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+            .summary-row .label { color: #6b7280; }
+            .summary-row.total { border-top: 2px solid #1f2937; padding-top: 8px; margin-top: 8px; font-weight: bold; color: #111827; }
+            .footer { border-top: 2px solid #d1d5db; padding-top: 16px; margin-top: 32px; display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; }
+            .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px; }
+            .signature { text-align: center; }
+            .signature-line { border-top: 1px solid #9ca3af; padding-top: 8px; margin: 0 32px; font-size: 14px; color: #4b5563; }
             @media print {
               @page { size: A4; margin: 10mm; }
-              body { background: white !important; }
+              body { padding: 0; }
             }
           </style>
         </head>
         <body>
-          ${printContent.innerHTML}
+          <div class="print-report">
+            <div class="header">
+              <div class="header-left">
+                <img src="${logoSrc}" alt="Logo" />
+                <div>
+                  <h1>Aionion Capital</h1>
+                  <p>Event Expense Report</p>
+                </div>
+              </div>
+              <div class="header-right">
+                <p>Report Generated:</p>
+                <p class="bold">${new Date().toLocaleDateString("en-IN")}</p>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2 class="section-title">Event Details</h2>
+              <div class="details-box">
+                <div class="details-grid">
+                  <div><span class="label">Event Name:</span><span class="value">${eventDetails.eventName || "N/A"}</span></div>
+                  <div><span class="label">Date:</span><span class="value">${eventDetails.date ? new Date(eventDetails.date).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : "N/A"}</span></div>
+                  <div><span class="label">Venue:</span><span class="value">${eventDetails.venue || "N/A"}</span></div>
+                  <div><span class="label">Phone:</span><span class="value">${eventDetails.phone || "N/A"}</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2 class="section-title">Expense Details</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 48px;">S.No</th>
+                    <th>Particulars</th>
+                    <th class="right" style="width: 112px;">Income</th>
+                    <th class="right" style="width: 112px;">Expenses</th>
+                    <th class="center" style="width: 80px;">Bills</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items.map((item, index) => `
+                    <tr${index % 2 === 1 ? ' style="background: #f9fafb;"' : ''}>
+                      <td class="center">${item.sNo}</td>
+                      <td>${item.particulars || "-"}</td>
+                      <td class="right income">${item.income > 0 ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(item.income) : "-"}</td>
+                      <td class="right expense">${item.expenses > 0 ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(item.expenses) : "-"}</td>
+                      <td class="center">${item.billFileName ? "✓" : "-"}</td>
+                      <td>${item.remarks || "-"}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="section">
+              <div class="summary-box">
+                <h2 class="section-title" style="border-bottom: 1px solid #d1d5db; padding-bottom: 8px;">Summary</h2>
+                <div class="summary-row">
+                  <span class="label">Total Income:</span>
+                  <span class="income">${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(items.reduce((sum, item) => sum + item.income, 0))}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Total Expenses:</span>
+                  <span class="expense">${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(items.reduce((sum, item) => sum + item.expenses, 0))}</span>
+                </div>
+                <div class="summary-row" style="border-top: 1px solid #d1d5db; padding-top: 8px;">
+                  <span class="label">Net Balance:</span>
+                  <span style="font-weight: 600; color: ${items.reduce((sum, item) => sum + item.income, 0) - items.reduce((sum, item) => sum + item.expenses, 0) >= 0 ? '#15803d' : '#b91c1c'};">${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(items.reduce((sum, item) => sum + item.income, 0) - items.reduce((sum, item) => sum + item.expenses, 0))}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">GST @ ${gstPercentage}%:</span>
+                  <span>${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format((items.reduce((sum, item) => sum + item.expenses, 0) * gstPercentage) / 100)}</span>
+                </div>
+                <div class="summary-row total">
+                  <span>Grand Total:</span>
+                  <span>${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(items.reduce((sum, item) => sum + item.expenses, 0) + (items.reduce((sum, item) => sum + item.expenses, 0) * gstPercentage) / 100)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div>
+                <p>This is a computer-generated report.</p>
+                <p>For any queries, please contact the event management team.</p>
+              </div>
+              <div style="text-align: right;">
+                <p>Aionion Capital</p>
+                <p>Event Management Division</p>
+              </div>
+            </div>
+
+            <div class="signatures">
+              <div class="signature">
+                <div class="signature-line">Prepared By</div>
+              </div>
+              <div class="signature">
+                <div class="signature-line">Approved By</div>
+              </div>
+            </div>
+          </div>
         </body>
       </html>
     `);
 
     printWindow.document.close();
 
-    printWindow.onload = () => {
+    // Wait for logo to load before printing
+    setTimeout(() => {
       printWindow.focus();
       printWindow.print();
-      printWindow.close();
-    };
+    }, 500);
 
     toast.success("Print dialog opened!");
   };
