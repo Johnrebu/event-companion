@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          event_id: string
+          event_name: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          storage_path: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          event_id: string
+          event_name: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          storage_path: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          event_id?: string
+          event_name?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          storage_path?: string
+          uploaded_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
