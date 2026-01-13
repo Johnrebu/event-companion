@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { ExpenseItem, EventDetails } from "@/types/expense";
-import ainionLogo from "@/assets/aionion-logo.png";
+import coronaLogo from "@/assets/corona-logo.png";
 
 interface PrintReportProps {
   eventDetails: EventDetails;
@@ -39,9 +39,9 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
         {/* Header */}
         <div className="flex items-center justify-between border-b-2 border-gray-800 pb-4 mb-6">
           <div className="flex items-center gap-4">
-            <img src={ainionLogo} alt="Aionion Capital" className="h-16 w-auto" />
+            <img src={coronaLogo} alt="Corona Creative Solutions" className="h-16 w-auto" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Aionion Capital</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Corona Creative Solutions</h1>
               <p className="text-sm text-gray-600">Event Expense Report</p>
             </div>
           </div>
@@ -148,7 +148,7 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
               <p>For any queries, please contact the event management team.</p>
             </div>
             <div className="text-right">
-              <p>Aionion Capital</p>
+              <p>Corona Creative Solutions</p>
               <p>Event Management Division</p>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { FileSpreadsheet, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
+import coronaLogo from "@/assets/corona-logo.png";
 
 const navItems = [
     { path: "/", label: "Expenses", icon: FileSpreadsheet },
@@ -14,8 +15,9 @@ export function Navigation() {
         <nav className="bg-card border-b sticky top-0 z-50">
             <div className="container mx-auto px-4">
                 <div className="flex items-center h-14 gap-6">
-                    <div className="font-bold text-lg text-primary">
-                        Event Companion
+                    <div className="flex items-center gap-2">
+                        <img src={coronaLogo} alt="Corona Creative Solutions" className="h-8 w-auto" />
+                        <span className="font-bold text-lg text-primary">Corona Creative Solutions</span>
                     </div>
                     <div className="flex gap-1">
                         {navItems.map((item) => {

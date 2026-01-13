@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ExpenseItem, EventDetails } from "@/types/expense";
 import EventHeader from "@/components/EventHeader";
 import ExpenseTable from "@/components/ExpenseTable";
@@ -9,6 +9,8 @@ import PrintReport from "@/components/PrintReport";
 import { Button } from "@/components/ui/button";
 import { Download, Save, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
+
+const STORAGE_KEY = "expense-report";
 
 const createEmptyItem = (sNo: number): ExpenseItem => ({
   id: crypto.randomUUID(),
@@ -21,23 +23,75 @@ const createEmptyItem = (sNo: number): ExpenseItem => ({
   billFileName: "",
 });
 
+const loadSavedData = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      return {
+        eventDetails: data.eventDetails || {
+          eventName: "",
+          date: new Date().toISOString().split("T")[0],
+          venue: "",
+          phone: "",
+        },
+        items: data.items?.length > 0 ? data.items.map((item: ExpenseItem) => ({
+          ...item,
+          billAttached: null, // File objects can't be stored in localStorage
+        })) : [createEmptyItem(1), createEmptyItem(2), createEmptyItem(3)],
+        gstPercentage: data.gstPercentage ?? 18,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to load saved expense data:", e);
+  }
+  return null;
+};
+
 const Index = () => {
-  const [eventDetails, setEventDetails] = useState<EventDetails>({
-    eventName: "",
-    date: new Date().toISOString().split("T")[0],
-    venue: "",
-    phone: "",
-  });
+  const savedData = loadSavedData();
 
-  const [items, setItems] = useState<ExpenseItem[]>([
-    createEmptyItem(1),
-    createEmptyItem(2),
-    createEmptyItem(3),
-  ]);
+  const [eventDetails, setEventDetails] = useState<EventDetails>(
+    savedData?.eventDetails || {
+      eventName: "",
+      date: new Date().toISOString().split("T")[0],
+      venue: "",
+      phone: "",
+    }
+  );
 
-  const [gstPercentage, setGstPercentage] = useState(18);
+  const [items, setItems] = useState<ExpenseItem[]>(
+    savedData?.items || [
+      createEmptyItem(1),
+      createEmptyItem(2),
+      createEmptyItem(3),
+    ]
+  );
+
+  const [gstPercentage, setGstPercentage] = useState(savedData?.gstPercentage ?? 18);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Auto-save to localStorage whenever data changes
+  useEffect(() => {
+    // Skip the first render to avoid overwriting with empty/initial state
+    if (!isInitialized) {
+      setIsInitialized(true);
+      return;
+    }
+
+    const report = {
+      eventDetails,
+      items: items.map(item => ({
+        ...item,
+        billAttached: null, // Can't store File objects
+      })),
+      gstPercentage,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(report));
+  }, [eventDetails, items, gstPercentage, isInitialized]);
 
   const handleItemChange = (updatedItem: ExpenseItem) => {
     setItems(items.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
@@ -186,7 +240,7 @@ const Index = () => {
               <div class="header-left">
                 <img src="${logoSrc}" alt="Logo" />
                 <div>
-                  <h1>Aionion Capital</h1>
+                  <h1>Corona Creative Solutions</h1>
                   <p>Event Expense Report</p>
                 </div>
               </div>
@@ -268,7 +322,7 @@ const Index = () => {
                 <p>For any queries, please contact the event management team.</p>
               </div>
               <div style="text-align: right;">
-                <p>Aionion Capital</p>
+                <p>Corona Creative Solutions</p>
                 <p>Event Management Division</p>
               </div>
             </div>
@@ -333,7 +387,7 @@ const Index = () => {
 
           <div className="text-center text-sm text-muted-foreground py-4">
             <FileText className="h-4 w-4 inline mr-2" />
-            Powered by Aionion Event Management
+            Powered by Corona Creative Solutions
           </div>
         </div>
       </div>

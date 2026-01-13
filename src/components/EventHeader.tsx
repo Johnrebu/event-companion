@@ -2,7 +2,7 @@ import { EventDetails } from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, MapPin, Phone } from "lucide-react";
-import ainionLogo from "@/assets/aionion-logo.png";
+import moneyPechuLogo from "@/assets/moneypechu-logo.png";
 
 interface EventHeaderProps {
   eventDetails: EventDetails;
@@ -18,10 +18,10 @@ const EventHeader = ({ eventDetails, onChange }: EventHeaderProps) => {
     <div className="bg-header-gradient rounded-xl p-6 text-primary-foreground shadow-lg">
       <div className="flex items-center gap-4 mb-6">
         <div className="bg-primary-foreground rounded-lg p-2">
-          <img src={ainionLogo} alt="Aionion Capital" className="h-10 w-auto" />
+          <img src={moneyPechuLogo} alt="Money Pechu" className="h-10 w-auto" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Aionion Capital</h1>
+          <h1 className="text-2xl font-bold">Money Pechu Event</h1>
           <p className="text-primary-foreground/80 text-sm">Event Expense Report</p>
         </div>
       </div>
