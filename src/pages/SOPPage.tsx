@@ -13,7 +13,9 @@ import {
     Megaphone,
     LucideIcon,
     Printer,
-    RotateCcw
+    RotateCcw,
+    Coffee,
+    Truck
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,8 +56,9 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
         icon: Search,
         tasks: [
             { id: "date-final", label: "Date Finalization", completed: false },
-            { id: "city-res", label: "City Research", completed: false },
-            { id: "tier-cities", label: "Tier 1, 2, and 3 Cities Selection", completed: false },
+            { id: "city-res", label: "City Research (Tier 1, 2, 3)", completed: false },
+            { id: "digital-res", label: "Digital Research (YouTube Stats, Subscribers, Viewers)", completed: false },
+            { id: "pax-estimate", label: "Pax Count vs Venue Budget Estimate", completed: false },
             { id: "capacity-tax", label: "Maximum Capacity and Tax Assessment", completed: false },
         ],
     },
@@ -64,10 +67,12 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
         title: "Venue and Location",
         icon: MapPin,
         tasks: [
-            { id: "easy-access", label: "Easy Access for Attendees", completed: false },
-            { id: "proximity", label: "Proximity to Railway and Bus Stations", completed: false },
-            { id: "parking", label: "Adequate Parking Space", completed: false },
-            { id: "backstage", label: "Backstage Space Planning", completed: false },
+            { id: "easy-access", label: "Transport Access (Railway & Bus Proximity)", completed: false },
+            { id: "parking-sec", label: "Adequate Parking & Security Layout", completed: false },
+            { id: "seating-arr", label: "Seating Arrangements (Inbuilt vs External Chairs)", completed: false },
+            { id: "stall-space", label: "Stall Space Planning (Aionion, Insurance, Books, etc.)", completed: false },
+            { id: "stage-led", label: "Stage Size & LED Screen Placement Planning", completed: false },
+            { id: "hi-tea-space", label: "Hi-Tea & Stall Space (Arabian Tent if needed)", completed: false },
             { id: "insurance", label: "Venue Insurance", completed: false },
         ],
     },
@@ -77,10 +82,10 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
         icon: Mic2,
         tasks: [
             { id: "led-sound", label: "LED, Sound, and Light Setup", completed: false },
-            { id: "comms", label: "Mics and Walkie-talkies", completed: false },
-            { id: "stage-dim", label: "Stage Dimensions Finalization", completed: false },
-            { id: "decor", label: "Event Decor and Ambience", completed: false },
-            { id: "furniture", label: "Furniture and VIP Sofas", completed: false },
+            { id: "comms", label: "Mics, Mike Stands & Walkie-talkies", completed: false },
+            { id: "stage-dim", label: "Final Stage Dimensions", completed: false },
+            { id: "decor", label: "Event Decor, Tables & Ambience", completed: false },
+            { id: "furniture", label: "Furniture (Chairs, VIP Sofas, Queue Managers)", completed: false },
         ],
     },
     {
@@ -88,10 +93,11 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
         title: "Hospitality and Logistics",
         icon: Utensils,
         tasks: [
-            { id: "travel", label: "Travel and Conveyance Arranged", completed: false },
+            { id: "team-logistics", label: "Team Travel (Accounts, Event, Sales, Media, Books)", completed: false },
+            { id: "travel-tickets", label: "Tickets (Train/Air) & Room Charges Sorted", completed: false },
+            { id: "conveyance", label: "Local Conveyance & Per-day Charges", completed: false },
             { id: "food", label: "Daily Food Expenses for Team", completed: false },
-            { id: "staff", label: "Staff and Sales Team Coordination", completed: false },
-            { id: "media-hospital", label: "Media and Hospital Teams Ready", completed: false },
+            { id: "media-hospital", label: "Media and Medical Emergency Teams Ready", completed: false },
         ],
     },
     {
@@ -99,10 +105,11 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
         title: "Collaterals and Branding",
         icon: Stamp,
         tasks: [
-            { id: "swag", label: "Keychains and Notepads", completed: false },
-            { id: "id-cards", label: "Staff ID Cards", completed: false },
+            { id: "swag", label: "Swag (Keychains, Notepads, Pens)", completed: false },
+            { id: "courier", label: "Courier Charges Plan (Books, Canopy, Standees)", completed: false },
+            { id: "id-cards", label: "Staff ID Cards & Collaterals", completed: false },
             { id: "feedback", label: "Feedback Forms Ready", completed: false },
-            { id: "books", label: "Event Books/Brochures", completed: false },
+            { id: "books", label: "Event Books/Brochures & Signage", completed: false },
         ],
     },
     {
@@ -110,11 +117,11 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
         title: "Operations and Manpower",
         icon: ShieldCheck,
         tasks: [
-            { id: "security", label: "Promoters and Security Staff", completed: false },
+            { id: "security", label: "Promoters, Parking & Security Staff", completed: false },
+            { id: "hi-tea-vendor", label: "Hi-Tea Vendor (Quality & Cost Effectiveness)", completed: false },
             { id: "queue", label: "Queue Managers Deployment", completed: false },
-            { id: "vendor", label: "Vendor Management System", completed: false },
+            { id: "vendor", label: "General Vendor Management System", completed: false },
             { id: "materials", label: "Quality Materials Quality Check", completed: false },
-            { id: "cost", label: "Cost Effectiveness Review", completed: false },
         ],
     },
     {
@@ -131,7 +138,7 @@ const SOP_METADATA: SOPCategoryMetadata[] = [
     },
 ];
 
-const STORAGE_KEY = "event-sop-data-v2";
+const STORAGE_KEY = "event-sop-data-v3";
 
 export default function SOPPage() {
     const [taskState, setTaskState] = useState<Record<string, boolean>>({});
