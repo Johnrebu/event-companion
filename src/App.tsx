@@ -7,6 +7,7 @@ import { Navigation } from "@/components/Navigation";
 import Index from "./pages/Index";
 import EventsPage from "./pages/EventsPage";
 import SOPPage from "./pages/SOPPage";
+import CoronaSOPPage from "./pages/CoronaSOPPage";
 import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/sop" element={<SOPPage />} />
+          <Route path="/corona-sop" element={<CoronaSOPPage />} />
           <Route path="/help" element={<HelpPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

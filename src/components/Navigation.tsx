@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { FileSpreadsheet, CalendarDays, FolderOpen, ClipboardCheck, HelpCircle } from "lucide-react";
+import { FileSpreadsheet, CalendarDays, FolderOpen, ClipboardCheck, HelpCircle, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coronaLogo from "@/assets/corona-logo.png";
 
 const navItems = [
     { path: "/", label: "Expenses", icon: FileSpreadsheet },
     { path: "/events", label: "Events", icon: CalendarDays },
-    { path: "/sop", label: "SOP", icon: ClipboardCheck },
+    { path: "/sop", label: "Pre-Event", icon: ClipboardCheck },
+    { path: "/corona-sop", label: "Event SOP", icon: Zap },
     { path: "/help", label: "Help", icon: HelpCircle },
 ];
 

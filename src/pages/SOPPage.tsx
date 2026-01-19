@@ -50,100 +50,177 @@ interface SOPCategoryMetadata {
 }
 
 const SOP_METADATA: SOPCategoryMetadata[] = [
+    // Phase 1: Strategic Location Analysis
     {
-        id: "planning",
-        title: "Planning and Research",
+        id: "location-analysis",
+        title: "Phase 1: Strategic Location Analysis",
         icon: Search,
         tasks: [
-            { id: "date-final", label: "Date Finalization", completed: false },
-            { id: "city-res", label: "City Research (Tier 1, 2, 3)", completed: false },
-            { id: "digital-res", label: "Digital Research (YouTube Stats, Subscribers, Viewers)", completed: false },
-            { id: "pax-estimate", label: "Pax Count vs Venue Budget Estimate", completed: false },
-            { id: "capacity-tax", label: "Maximum Capacity and Tax Assessment", completed: false },
+            { id: "date-finalization", label: "Event Date Finalization (45+ days advance)", completed: false },
+            { id: "city-tier", label: "City Selection Strategy (Tier 1, 2, 3 Analysis)", completed: false },
+            { id: "yt-stats", label: "Digital Research - YouTube Stats & Subscriber Analysis", completed: false },
+            { id: "viewer-demographics", label: "Viewer Demographics & Watch Time Analysis", completed: false },
+            { id: "regional-demand", label: "Regional Demand Assessment", completed: false },
         ],
     },
     {
-        id: "venue",
-        title: "Venue and Location",
+        id: "venue-feasibility",
+        title: "Venue Feasibility & Economic Modelling",
         icon: MapPin,
         tasks: [
-            { id: "easy-access", label: "Transport Access (Railway & Bus Proximity)", completed: false },
-            { id: "parking-sec", label: "Adequate Parking & Security Layout", completed: false },
-            { id: "seating-arr", label: "Seating Arrangements (Inbuilt vs External Chairs)", completed: false },
-            { id: "stall-space", label: "Stall Space Planning (Aionion, Insurance, Books, etc.)", completed: false },
-            { id: "stage-led", label: "Stage Size & LED Screen Placement Planning", completed: false },
-            { id: "hi-tea-space", label: "Hi-Tea & Stall Space (Arabian Tent if needed)", completed: false },
-            { id: "insurance", label: "Venue Insurance", completed: false },
+            { id: "venue-rate", label: "Venue Rate ∝ Pax Count (Economic Formula)", completed: false },
+            { id: "capacity-calc", label: "Maximum Capacity Calculation", completed: false },
+            { id: "tax-assessment", label: "Tax & Compliance Assessment", completed: false },
+            { id: "budget-estimate", label: "Pax Count vs Venue Budget Estimate", completed: false },
+            { id: "venue-insurance", label: "Venue Insurance Coverage", completed: false },
         ],
     },
     {
-        id: "production",
-        title: "Production Elements",
-        icon: Mic2,
-        tasks: [
-            { id: "led-sound", label: "LED, Sound, and Light Setup", completed: false },
-            { id: "comms", label: "Mics, Mike Stands & Walkie-talkies", completed: false },
-            { id: "stage-dim", label: "Final Stage Dimensions", completed: false },
-            { id: "decor", label: "Event Decor, Tables & Ambience", completed: false },
-            { id: "furniture", label: "Furniture (Chairs, VIP Sofas, Queue Managers)", completed: false },
-        ],
-    },
-    {
-        id: "hospitality",
-        title: "Hospitality and Logistics",
-        icon: Utensils,
-        tasks: [
-            { id: "team-logistics", label: "Team Travel (Accounts, Event, Sales, Media, Books)", completed: false },
-            { id: "travel-tickets", label: "Tickets (Train/Air) & Room Charges Sorted", completed: false },
-            { id: "conveyance", label: "Local Conveyance & Per-day Charges", completed: false },
-            { id: "food", label: "Daily Food Expenses for Team", completed: false },
-            { id: "media-hospital", label: "Media and Medical Emergency Teams Ready", completed: false },
-        ],
-    },
-    {
-        id: "branding",
-        title: "Collaterals and Branding",
-        icon: Stamp,
-        tasks: [
-            { id: "swag", label: "Swag (Keychains, Notepads, Pens)", completed: false },
-            { id: "courier", label: "Courier Charges Plan (Books, Canopy, Standees)", completed: false },
-            { id: "id-cards", label: "Staff ID Cards & Collaterals", completed: false },
-            { id: "feedback", label: "Feedback Forms Ready", completed: false },
-            { id: "books", label: "Event Books/Brochures & Signage", completed: false },
-        ],
-    },
-    {
-        id: "operations",
-        title: "Operations and Manpower",
+        id: "vendor-allocation",
+        title: "Vendor/Subcontractor/Staff/Partner Allocation",
         icon: ShieldCheck,
         tasks: [
-            { id: "security", label: "Promoters, Parking & Security Staff", completed: false },
-            { id: "hi-tea-vendor", label: "Hi-Tea Vendor (Quality & Cost Effectiveness)", completed: false },
-            { id: "queue", label: "Queue Managers Deployment", completed: false },
-            { id: "vendor", label: "General Vendor Management System", completed: false },
-            { id: "materials", label: "Quality Materials Quality Check", completed: false },
+            { id: "vendor-list", label: "Create Vendor Master List", completed: false },
+            { id: "subcontractor-brief", label: "Subcontractor Briefing & Contracts", completed: false },
+            { id: "partner-mou", label: "Partner MOU & Agreements", completed: false },
+            { id: "staff-assignment", label: "Staff Role Assignment Matrix", completed: false },
+            { id: "resource-timeline", label: "Resource Allocation Timeline", completed: false },
         ],
     },
     {
-        id: "marketing",
-        title: "Marketing and Sales",
+        id: "technical-specs",
+        title: "Technical Specifications & Seating Layout",
+        icon: Mic2,
+        tasks: [
+            { id: "stage-dimensions", label: "Final Stage Dimensions & Design", completed: false },
+            { id: "seating-layout", label: "Seating Layout Plan (Row-wise)", completed: false },
+            { id: "vip-section", label: "VIP/SVIP Section Planning", completed: false },
+            { id: "general-section", label: "General Admission Section", completed: false },
+            { id: "sightline-check", label: "Sightline & Visibility Check", completed: false },
+            { id: "emergency-exits", label: "Emergency Exit Mapping", completed: false },
+        ],
+    },
+    {
+        id: "accessibility",
+        title: "Accessibility, Parking & External Logistics",
+        icon: Truck,
+        tasks: [
+            { id: "railway-access", label: "Railway Station Proximity Check", completed: false },
+            { id: "bus-access", label: "Bus Stand Accessibility", completed: false },
+            { id: "parking-layout", label: "Parking Area Layout & Capacity", completed: false },
+            { id: "parking-security", label: "Parking Security Arrangement", completed: false },
+            { id: "drop-zone", label: "VIP Drop Zone Planning", completed: false },
+            { id: "traffic-mgmt", label: "Traffic Management Plan", completed: false },
+        ],
+    },
+    // Phase 2: Production Elements & Hardware
+    {
+        id: "production-hardware",
+        title: "Phase 2: Production Elements & Hardware",
+        icon: Mic2,
+        tasks: [
+            { id: "led-screens", label: "LED Screen Setup (Size & Placement)", completed: false },
+            { id: "sound-system", label: "Sound System Configuration", completed: false },
+            { id: "lighting-rig", label: "Lighting Rig & Effects", completed: false },
+            { id: "mics-stands", label: "Mics, Mike Stands & Wireless Systems", completed: false },
+            { id: "walkie-talkies", label: "Walkie-Talkies for Team Communication", completed: false },
+            { id: "backup-power", label: "Backup Power/Generator Arrangement", completed: false },
+        ],
+    },
+    {
+        id: "brand-collaterals",
+        title: "Brand Collaterals & Material Logistics",
+        icon: Stamp,
+        tasks: [
+            { id: "plan-colors", label: "Plan Color Changes & Brand Consistency", completed: false },
+            { id: "standees", label: "Standees & Banner Design", completed: false },
+            { id: "stage-backdrop", label: "Stage Backdrop Design", completed: false },
+            { id: "signage", label: "Directional Signage & Branding", completed: false },
+            { id: "swag-items", label: "Swag Items (Keychains, Notepads, Pens)", completed: false },
+            { id: "id-cards", label: "Staff ID Cards & Lanyards", completed: false },
+            { id: "feedback-forms", label: "Feedback Forms Ready", completed: false },
+            { id: "courier-plan", label: "Courier Charges Plan (Books, Canopy, Standees)", completed: false },
+        ],
+    },
+    {
+        id: "hospitality-hitea",
+        title: "Hospitality Standards: The Hi-Tea Experience",
+        icon: Coffee,
+        tasks: [
+            { id: "hitea-vendor", label: "Hi-Tea Vendor Selection (Quality & Cost)", completed: false },
+            { id: "menu-plan", label: "Menu Planning & Dietary Options", completed: false },
+            { id: "serving-stations", label: "Serving Stations Layout", completed: false },
+            { id: "arabian-tent", label: "Arabian Tent Setup (if needed)", completed: false },
+            { id: "stall-space", label: "Stall Space for Aionion, Insurance, Books", completed: false },
+            { id: "beverage-station", label: "Beverage Station Management", completed: false },
+        ],
+    },
+    {
+        id: "team-logistics",
+        title: "Internal Team Logistics & Mobility",
+        icon: Truck,
+        tasks: [
+            { id: "team-roles", label: "Team Roles: Accounts, Event, Sales, Media, Books", completed: false },
+            { id: "travel-tickets", label: "Tickets (Train/Air) Booking", completed: false },
+            { id: "accommodation", label: "Room/Accommodation Booking", completed: false },
+            { id: "local-conveyance", label: "Local Conveyance Arrangement", completed: false },
+            { id: "per-day-charges", label: "Per-day Charges Calculation", completed: false },
+            { id: "team-food", label: "Daily Food Expenses for Team", completed: false },
+            { id: "medical-emergency", label: "Medical Emergency Contact Ready", completed: false },
+        ],
+    },
+    {
+        id: "security-deployment",
+        title: "Local Manpower & Security Deployment",
+        icon: ShieldCheck,
+        tasks: [
+            { id: "promoters", label: "Promoters Deployment", completed: false },
+            { id: "parking-staff", label: "Parking Staff Assignment", completed: false },
+            { id: "security-team", label: "Security Team Briefing", completed: false },
+            { id: "queue-managers", label: "Queue Managers Deployment", completed: false },
+            { id: "vendor-mgmt", label: "General Vendor Management System", completed: false },
+            { id: "quality-check", label: "Materials Quality Check", completed: false },
+        ],
+    },
+    // Phase 3: Marketing, Digital & Ticketing
+    {
+        id: "marketing-ticketing",
+        title: "Phase 3: Marketing, Digital & Ticketing",
         icon: Megaphone,
         tasks: [
-            { id: "pricing", label: "Ticket Pricing Strategy", completed: false },
-            { id: "platforms", label: "Ticketing Platforms Integration", completed: false },
+            { id: "pricing-strategy", label: "Ticket Pricing Strategy (10% Rule)", completed: false },
+            { id: "ticketing-platform", label: "Ticketing Platform Integration", completed: false },
             { id: "yt-promos", label: "YouTube Promos Launch", completed: false },
-            { id: "meta", label: "Meta (FB/IG) Campaigns", completed: false },
+            { id: "meta-campaigns", label: "Meta (FB/IG) Ad Campaigns", completed: false },
             { id: "digital-team", label: "Digital Marketing Team Briefing", completed: false },
+            { id: "pax-target", label: "Target: 500 PAX per Event", completed: false },
+            { id: "promo-timeline", label: "Promotional Content Timeline", completed: false },
+        ],
+    },
+    {
+        id: "master-checklist",
+        title: "The Master Execution Checklist (D-Day)",
+        icon: ShieldCheck,
+        tasks: [
+            { id: "d-day-brief", label: "D-Day Team Briefing", completed: false },
+            { id: "venue-walkthrough", label: "Final Venue Walkthrough", completed: false },
+            { id: "tech-rehearsal", label: "Technical Rehearsal Complete", completed: false },
+            { id: "vendor-confirm", label: "All Vendors On-Site Confirmation", completed: false },
+            { id: "registration-ready", label: "Registration Desk Ready", completed: false },
+            { id: "media-ready", label: "Media Team Positioned", completed: false },
+            { id: "security-active", label: "Security Protocols Active", completed: false },
+            { id: "emergency-plan", label: "Emergency Response Plan Shared", completed: false },
+            { id: "post-event-debrief", label: "Post-Event Debrief Scheduled", completed: false },
         ],
     },
 ];
 
-const STORAGE_KEY = "event-sop-data-v3";
+const STORAGE_KEY = "event-sop-data-v4";
 
 export default function SOPPage() {
     const [taskState, setTaskState] = useState<Record<string, boolean>>({});
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-        planning: true,
+        "location-analysis": true,
     });
 
     useEffect(() => {
@@ -205,10 +282,10 @@ export default function SOPPage() {
                     <div className="space-y-4">
                         <div>
                             <h1 className="text-4xl font-extrabold tracking-tight text-primary mb-2">
-                                Pre-Event SOP
+                                Pre-Event Operations
                             </h1>
                             <p className="text-muted-foreground text-lg">
-                                Standard Operating Procedure for Event Excellence
+                                Strategic Planning & Execution Guide
                             </p>
                         </div>
                         <div className="flex gap-2 no-print">
