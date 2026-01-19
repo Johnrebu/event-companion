@@ -4,7 +4,6 @@ import {
     HelpCircle,
     FileSpreadsheet,
     Calendar,
-    Image as ImageIcon,
     ClipboardCheck,
     ChevronRight,
     BookOpen,
@@ -71,22 +70,6 @@ const HELP_DATA: HelpSection[] = [
             {
                 title: "How to manage RSVPs?",
                 content: "Click on a specific event to view the RSVP list. You can add new attendees, update their status, and keep track of who is coming."
-            }
-        ]
-    },
-    {
-        id: "gallery",
-        title: "Document Gallery",
-        icon: ImageIcon,
-        description: "Secure storage for event photos, PDFs, and Word documents.",
-        articles: [
-            {
-                title: "Uploading Documents",
-                content: "Navigate to the Gallery, select the relevant event category, and use the upload button to store documents. Supported formats include images (JPG/PNG), PDFs, and Word documents."
-            },
-            {
-                title: "Searching and Filtering",
-                content: "Use the search bar in the Gallery to find specific files. You can also filter by event type to quickly locate all documents related to a specific project."
             }
         ]
     },

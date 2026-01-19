@@ -6,7 +6,6 @@ import coronaLogo from "@/assets/corona-logo.png";
 const navItems = [
     { path: "/", label: "Expenses", icon: FileSpreadsheet },
     { path: "/events", label: "Events", icon: CalendarDays },
-    { path: "/gallery", label: "Gallery", icon: FolderOpen },
     { path: "/sop", label: "SOP", icon: ClipboardCheck },
     { path: "/help", label: "Help", icon: HelpCircle },
 ];
