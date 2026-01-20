@@ -50,6 +50,51 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_reports: {
+        Row: {
+          created_at: string | null
+          event_date: string
+          event_name: string
+          gst_percentage: number | null
+          id: string
+          items: Json
+          phone: string | null
+          total_expenses: number | null
+          total_income: number | null
+          updated_at: string | null
+          user_id: string | null
+          venue: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_date: string
+          event_name: string
+          gst_percentage?: number | null
+          id?: string
+          items?: Json
+          phone?: string | null
+          total_expenses?: number | null
+          total_income?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          venue?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_date?: string
+          event_name?: string
+          gst_percentage?: number | null
+          id?: string
+          items?: Json
+          phone?: string | null
+          total_expenses?: number | null
+          total_income?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          venue?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
