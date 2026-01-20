@@ -21,14 +21,24 @@ const EventHeader = ({ eventDetails, onChange }: EventHeaderProps) => {
           <img src={moneyPechuLogo} alt="Money Pechu" className="h-8 md:h-10 w-auto" />
         </div>
         <div>
-          <h1 className="text-xl md:text-2xl font-bold">Money Pechu Event</h1>
-          <p className="text-primary-foreground/80 text-xs md:text-sm">Event Expense Report</p>
+          <h1 className="text-xl md:text-3xl font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
+              Money Pechu
+            </span>
+            {" "}
+            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 bg-clip-text text-transparent">
+              Event
+            </span>
+          </h1>
+          <p className="text-primary-foreground/70 text-xs md:text-sm font-medium tracking-wide">
+            PROFESSIONAL EXPENSE REPORTING
+          </p>
         </div>
       </div>
 
       <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span className="h-1 w-1 rounded-full bg-primary-foreground" />
+        <h2 className="text-sm font-bold mb-4 flex items-center gap-2 tracking-[0.2em] text-primary-foreground/60">
+          <span className="h-1 w-1 rounded-full bg-amber-400" />
           EXPENSES SUMMARY
         </h2>
 

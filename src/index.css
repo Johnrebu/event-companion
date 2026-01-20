@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Inter:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -64,6 +66,8 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 222 47% 20%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 222 47% 20%;
+
+    --font-sans: "Outfit", "Inter", system-ui, sans-serif;
   }
 
   .dark {
@@ -131,6 +135,21 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv05", "cv08", "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    letter-spacing: -0.025em;
+    font-weight: 700;
   }
 }
 

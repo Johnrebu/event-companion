@@ -42,7 +42,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
                 Total Income
               </span>
             </div>
-            <p className="text-2xl font-bold text-income">
+            <p className="text-2xl md:text-3xl font-extrabold text-income tracking-tight">
               {formatCurrency(totalIncome)}
             </p>
           </div>
@@ -54,7 +54,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
                 Total Expenses
               </span>
             </div>
-            <p className="text-2xl font-bold text-expense">
+            <p className="text-2xl md:text-3xl font-extrabold text-expense tracking-tight">
               {formatCurrency(totalExpenses)}
             </p>
           </div>
@@ -70,7 +70,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
                 Net Balance
               </span>
             </div>
-            <p className={`text-2xl font-bold ${netAmount >= 0 ? "text-income" : "text-expense"}`}>
+            <p className={`text-2xl md:text-3xl font-extrabold tracking-tight ${netAmount >= 0 ? "text-income" : "text-expense"}`}>
               {formatCurrency(netAmount)}
             </p>
           </div>
@@ -113,7 +113,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
 
               <div className="bg-header-gradient rounded-lg px-4 py-3">
                 <span className="text-sm text-primary-foreground/80">Grand Total</span>
-                <p className="text-xl font-bold text-primary-foreground">
+                <p className="text-xl md:text-2xl font-extrabold text-primary-foreground tracking-tight">
                   {formatCurrency(grandTotal)}
                 </p>
               </div>

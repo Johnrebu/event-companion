@@ -408,7 +408,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="space-y-6">
+        <div className="space-y-8">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+              <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-800 bg-clip-text text-transparent">
+                Command
+              </span>{" "}
+              <span className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 bg-clip-text text-transparent">
+                Center
+              </span>
+            </h1>
+            <p className="text-muted-foreground font-medium tracking-widest text-[10px] md:text-xs uppercase">
+              Financial Intelligence & Expense Analysis
+            </p>
+          </div>
+
           <EventHeader eventDetails={eventDetails} onChange={setEventDetails} />
 
           <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3 justify-end">
