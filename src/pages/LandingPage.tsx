@@ -33,18 +33,19 @@ const LandingPage = () => {
                     </div>
 
                     {/* Main Title */}
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
+                    <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
                         <span className="bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
                             Corona Creative
                         </span>
-                        <br />
+                        {" "}
+                        <span className="md:inline hidden"><br /></span>
                         <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 bg-clip-text text-transparent">
                             Solutions
                         </span>
                     </h1>
 
                     {/* Tagline */}
-                    <p className="text-xl md:text-2xl text-gray-400 font-light tracking-wide mb-12 max-w-2xl mx-auto">
+                    <p className="text-lg md:text-2xl text-gray-400 font-light tracking-wide mb-12 max-w-2xl mx-auto px-4">
                         Crafting extraordinary experiences.
                         <br />
                         <span className="text-gray-500">Event management, reimagined.</span>

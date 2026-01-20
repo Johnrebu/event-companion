@@ -58,7 +58,7 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
           value={item.income || ""}
           onChange={(e) => handleChange("income", parseFloat(e.target.value) || 0)}
           placeholder="0.00"
-          className="text-right text-income font-medium"
+          className="text-right text-income font-medium min-w-[100px]"
           min="0"
           step="0.01"
         />
@@ -69,7 +69,7 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
           value={item.expenses || ""}
           onChange={(e) => handleChange("expenses", parseFloat(e.target.value) || 0)}
           placeholder="0.00"
-          className="text-right text-expense font-medium"
+          className="text-right text-expense font-medium min-w-[100px]"
           min="0"
           step="0.01"
         />

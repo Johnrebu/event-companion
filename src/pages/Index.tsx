@@ -411,28 +411,28 @@ const Index = () => {
         <div className="space-y-6">
           <EventHeader eventDetails={eventDetails} onChange={setEventDetails} />
 
-          <div className="flex flex-wrap gap-3 justify-end">
-            <Button variant="outline" onClick={handleSave} className="gap-2">
-              <Save className="h-4 w-4" />
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3 justify-end">
+            <Button variant="outline" onClick={handleSave} className="gap-2 text-xs md:text-sm h-9 md:h-10 px-2 md:px-4">
+              <Save className="h-3.5 w-3.5 md:h-4 md:w-4" />
               Save Draft
             </Button>
             <Button
               variant="default"
               onClick={handleSaveToDatabase}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-xs md:text-sm h-9 md:h-10 px-2 md:px-4"
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-              Save to Database
+              {loading ? <Loader2 className="h-3.5 w-3.5 md:h-4 md:w-4 animate-spin" /> : <Database className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+              <span className="truncate">Save to DB</span>
             </Button>
             <Dialog open={isSavedReportsOpen} onOpenChange={setIsSavedReportsOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <FolderOpen className="h-4 w-4" />
-                  Saved Reports
+                <Button variant="outline" className="gap-2 text-xs md:text-sm h-9 md:h-10 px-2 md:px-4">
+                  <FolderOpen className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  Reports
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh]">
+              <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>Saved Expense Reports</DialogTitle>
                 </DialogHeader>
@@ -451,17 +451,17 @@ const Index = () => {
                         <div
                           key={report.id}
                           onClick={() => handleLoadReport(report)}
-                          className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors group"
+                          className="p-3 md:p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors group"
                         >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold text-lg">{report.event_name}</h3>
-                              <p className="text-sm text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base md:text-lg truncate">{report.event_name}</h3>
+                              <p className="text-xs md:text-sm text-muted-foreground truncate">
                                 {format(new Date(report.event_date), "PPP")}
                                 {report.venue && ` • ${report.venue}`}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                               <div className="text-right text-sm">
                                 <div className="text-emerald-600 font-medium">
                                   Income: ₹{report.total_income.toLocaleString("en-IN")}

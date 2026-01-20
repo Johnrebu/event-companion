@@ -16,13 +16,13 @@ const EventHeader = ({ eventDetails, onChange }: EventHeaderProps) => {
 
   return (
     <div className="bg-header-gradient rounded-xl p-6 text-primary-foreground shadow-lg">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="bg-primary-foreground rounded-lg p-2">
-          <img src={moneyPechuLogo} alt="Money Pechu" className="h-10 w-auto" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+        <div className="bg-primary-foreground rounded-lg p-2 shrink-0">
+          <img src={moneyPechuLogo} alt="Money Pechu" className="h-8 md:h-10 w-auto" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Money Pechu Event</h1>
-          <p className="text-primary-foreground/80 text-sm">Event Expense Report</p>
+          <h1 className="text-xl md:text-2xl font-bold">Money Pechu Event</h1>
+          <p className="text-primary-foreground/80 text-xs md:text-sm">Event Expense Report</p>
         </div>
       </div>
 
