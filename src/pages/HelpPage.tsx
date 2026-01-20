@@ -9,7 +9,8 @@ import {
     BookOpen,
     MessageCircle,
     ArrowRight,
-    LucideIcon
+    LucideIcon,
+    Zap
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,57 +40,69 @@ interface HelpSection {
 const HELP_DATA: HelpSection[] = [
     {
         id: "expenses",
-        title: "Expense Management",
+        title: "Financial Command Center",
         icon: FileSpreadsheet,
-        description: "Track incomes, manage expenses, and generate professional reports.",
+        description: "Track incomes, manage expenses with professional grade analytical tools.",
         articles: [
             {
-                title: "How to add new expense items?",
-                content: "On the Expenses page, click the 'Add Item' button at the bottom of the table. You can then enter the particulars, income or expense amount, and any remarks. The totals will update automatically."
+                title: "Drafts vs. Permanent Database Storage",
+                content: "We offer two ways to save. 'Save Draft' stores your work locally in your browser's memory—useful for quick pick-ups. 'Save to Database' permanently stores your report in our cloud (Supabase), making it accessible across devices and secure from browser clears."
             },
             {
-                title: "How does the GST calculation work?",
-                content: "You can adjust the GST percentage in the Summary section at the bottom. The system calculates the GST amount based on your total expenses and adds it to the grand total."
+                title: "How to manage saved reports?",
+                content: "Click the 'Reports' button in the toolbar to see all your cloud-saved records. You can view the Net Balance for each report at a glance. Clicking a report loads it back into your workspace, while the trash icon allows for permanent deletion."
             },
             {
-                title: "Exporting and Printing Reports",
-                content: "Use the 'Save Draft', 'Export CSV', and 'Print / PDF' buttons at the top of the Expenses page. Saving stores data locally in your browser, while Export downloads a CSV file. Print opens a professional report layout optimized for physical printing."
+                title: "Professional Report Styling",
+                content: "Our system uses the 'Outfit' typography and high-contrast gradients to ensure your financial data is easy to read and looks professional for client presentations. The 'Print / PDF' button generates a high-quality physical copy optimized for A4 paper."
+            }
+        ]
+    },
+    {
+        id: "mobile",
+        title: "On-the-Go Usage",
+        icon: Zap,
+        description: "The platform is fully optimized for smartphones and tablets.",
+        articles: [
+            {
+                title: "Where is the navigation menu?",
+                content: "On mobile devices, we use a sleek 'Hamburger' menu in the top right. Tap it to access Home, Expenses, Events, and the Help Center seamlessly."
+            },
+            {
+                title: "Editing tables on small screens",
+                content: "Our expense tables are horizontally scrollable on mobile. Simply swipe left or right on the table to access all columns like 'Bills' and 'Remarks' while maintaining readable input sizes."
             }
         ]
     },
     {
         id: "events",
-        title: "Event Planning",
+        title: "Event Coordination",
         icon: Calendar,
-        description: "Keep track of your upcoming events and manage RSVPs.",
+        description: "Master your schedule and organize flawless experiences.",
         articles: [
             {
                 title: "Creating and managing events",
                 content: "The Events page lists all your planned activities. You can see event dates, locations, and current RSVP counts at a glance."
             },
             {
-                title: "How to manage RSVPs?",
-                content: "Click on a specific event to view the RSVP list. You can add new attendees, update their status, and keep track of who is coming."
+                title: "Professional Landing Page",
+                content: "Our new 'Corona Creative Solutions' home page provides a high-end entry point for your team, highlighting our core mission and providing quick-access shortcuts to all features."
             }
         ]
     },
     {
         id: "sop",
-        title: "Pre-Event SOP",
+        title: "Standard Operating Procedures",
         icon: ClipboardCheck,
-        description: "Follow a standard checklist to ensure event excellence.",
+        description: "Follow standardized checklists used by the industry's best.",
         articles: [
             {
                 title: "What is the Pre-Event SOP?",
                 content: "The SOP (Standard Operating Procedure) is a comprehensive checklist of 7 major categories (Planning, Venue, Production, etc.) that ensures every detail of your event is covered."
             },
             {
-                title: "How to track progress?",
-                content: "As you complete tasks, check them off. Each category has its own progress bar, and the overall completion status is shown at the top. This data is saved locally to your browser."
-            },
-            {
-                title: "Resetting or Printing the SOP",
-                content: "You can use the Reset button to start fresh for a new event. The Print button generates a clean version of your checklist, which is useful for on-site execution."
+                title: "Syncing & Printing Checks",
+                content: "All checklist items are saved as you tick them. Use the 'Print' feature to generate a physical walkthrough list for your ground team during event setup."
             }
         ]
     }
@@ -111,19 +124,25 @@ export default function HelpPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 pb-20">
             {/* Hero Section */}
-            <div className="bg-primary text-primary-foreground py-16 px-4">
-                <div className="container mx-auto max-w-4xl text-center">
-                    <Badge variant="secondary" className="mb-4 bg-accent/20 text-accent-content border-accent/30">
-                        Support Center
+            <div className="bg-[#0a0a0a] text-white py-20 px-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black opacity-50" />
+                <div className="container mx-auto max-w-4xl text-center relative z-10">
+                    <Badge variant="outline" className="mb-6 border-amber-500/50 text-amber-500 bg-amber-500/10 px-4 py-1">
+                        MISSION CONTROL SUPPORT
                     </Badge>
-                    <h1 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
-                        How can we help you today?
+                    <h1 className="text-4xl md:text-6xl font-black mb-8 tracking-tight">
+                        <span className="bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
+                            System
+                        </span>{" "}
+                        <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 bg-clip-text text-transparent">
+                            Intelligence
+                        </span>
                     </h1>
-                    <div className="relative max-w-2xl mx-auto">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <div className="relative max-w-2xl mx-auto group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-amber-500 transition-colors" />
                         <Input
-                            placeholder="Search for guides, features, or FAQs..."
-                            className="pl-12 h-14 text-lg rounded-2xl border-none shadow-2xl text-foreground"
+                            placeholder="Search command protocols, financial guides..."
+                            className="pl-12 h-14 text-lg rounded-2xl border-white/10 bg-white/5 backdrop-blur-md shadow-2xl text-white placeholder:text-gray-500 focus-visible:ring-amber-500/50"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
