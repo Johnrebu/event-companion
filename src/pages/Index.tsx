@@ -7,8 +7,18 @@ import Calculator from "@/components/Calculator";
 import CalculatorButton from "@/components/CalculatorButton";
 import PrintReport from "@/components/PrintReport";
 import { Button } from "@/components/ui/button";
-import { Download, Save, FileText, Printer } from "lucide-react";
+import { Download, Save, FileText, Printer, Database, FolderOpen, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useExpenseReports, SavedExpenseReport } from "@/hooks/useExpenseReports";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 const STORAGE_KEY = "expense-report";
 
@@ -71,7 +81,51 @@ const Index = () => {
   const [gstPercentage, setGstPercentage] = useState(savedData?.gstPercentage ?? 18);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Database operations
+  const { reports, loading, fetchReports, saveReport, deleteReport } = useExpenseReports();
+
+  // Fetch reports when dialog opens
+  useEffect(() => {
+    if (isSavedReportsOpen) {
+      fetchReports();
+    }
+  }, [isSavedReportsOpen, fetchReports]);
+
+  const handleSaveToDatabase = async () => {
+    if (!eventDetails.eventName) {
+      toast.error("Please enter an event name before saving");
+      return;
+    }
+    await saveReport(eventDetails, items, gstPercentage);
+  };
+
+  const handleLoadReport = (report: SavedExpenseReport) => {
+    setEventDetails({
+      eventName: report.event_name,
+      date: report.event_date,
+      venue: report.venue || "",
+      phone: report.phone || "",
+    });
+    setItems(report.items.map((item, index) => ({
+      ...item,
+      id: item.id || crypto.randomUUID(),
+      sNo: index + 1,
+      billAttached: null,
+    })));
+    setGstPercentage(report.gst_percentage);
+    setIsSavedReportsOpen(false);
+    toast.success(`Loaded report: ${report.event_name}`);
+  };
+
+  const handleDeleteReport = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this report?")) {
+      await deleteReport(id);
+    }
+  };
 
   // Auto-save to localStorage whenever data changes
   useEffect(() => {
@@ -362,6 +416,80 @@ const Index = () => {
               <Save className="h-4 w-4" />
               Save Draft
             </Button>
+            <Button
+              variant="default"
+              onClick={handleSaveToDatabase}
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+              Save to Database
+            </Button>
+            <Dialog open={isSavedReportsOpen} onOpenChange={setIsSavedReportsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  Saved Reports
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>Saved Expense Reports</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : reports.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No saved reports yet. Save a report to see it here.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {reports.map((report) => (
+                        <div
+                          key={report.id}
+                          onClick={() => handleLoadReport(report)}
+                          className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors group"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-lg">{report.event_name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(report.event_date), "PPP")}
+                                {report.venue && ` • ${report.venue}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-right text-sm">
+                                <div className="text-emerald-600 font-medium">
+                                  ₹{report.total_income.toLocaleString("en-IN")}
+                                </div>
+                                <div className="text-red-600">
+                                  ₹{report.total_expenses.toLocaleString("en-IN")}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => handleDeleteReport(report.id, e)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Saved: {format(new Date(report.created_at), "PPp")}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
             <Button variant="outline" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
               Export CSV
