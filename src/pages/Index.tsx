@@ -464,10 +464,13 @@ const Index = () => {
                             <div className="flex items-center gap-2">
                               <div className="text-right text-sm">
                                 <div className="text-emerald-600 font-medium">
-                                  ₹{report.total_income.toLocaleString("en-IN")}
+                                  Income: ₹{report.total_income.toLocaleString("en-IN")}
                                 </div>
                                 <div className="text-red-600">
-                                  ₹{report.total_expenses.toLocaleString("en-IN")}
+                                  Expenses: ₹{report.total_expenses.toLocaleString("en-IN")}
+                                </div>
+                                <div className={`font-bold mt-1 ${(report.total_income - report.total_expenses) >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                                  Net: ₹{(report.total_income - report.total_expenses).toLocaleString("en-IN")}
                                 </div>
                               </div>
                               <Button
