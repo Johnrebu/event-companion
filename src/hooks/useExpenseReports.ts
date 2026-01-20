@@ -37,7 +37,7 @@ export function useExpenseReports() {
             // Parse items from JSONB
             const parsedReports = (data || []).map(report => ({
                 ...report,
-                items: report.items as ExpenseItem[]
+                items: report.items as unknown as ExpenseItem[]
             }));
 
             setReports(parsedReports);
@@ -114,7 +114,7 @@ export function useExpenseReports() {
 
             return {
                 ...data,
-                items: data.items as ExpenseItem[]
+                items: data.items as unknown as ExpenseItem[]
             } as SavedExpenseReport;
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to fetch report';
