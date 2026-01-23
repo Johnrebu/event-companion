@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { FileSpreadsheet, CalendarDays, FolderOpen, ClipboardCheck, HelpCircle, Zap, Home, Menu } from "lucide-react";
+import { FileSpreadsheet, CalendarDays, FolderOpen, ClipboardCheck, HelpCircle, Zap, Home, Menu, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coronaLogo from "@/assets/corona-logo.png";
 import { Button } from "@/components/ui/button";
+import GSTCalculator from "@/components/GSTCalculator";
 import {
     Sheet,
     SheetContent,
@@ -24,6 +25,7 @@ const navItems = [
 export function Navigation() {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
+    const [isGSTOpen, setIsGSTOpen] = useState(false);
 
     return (
         <nav className="bg-card border-b sticky top-0 z-50">
@@ -62,7 +64,16 @@ export function Navigation() {
                     </div>
 
                     {/* Mobile Menu */}
-                    <div className="flex lg:hidden">
+                    <div className="flex lg:hidden items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 lg:hidden"
+                            onClick={() => setIsGSTOpen(true)}
+                        >
+                            <Percent className="h-5 w-5" />
+                            <span className="sr-only">GST Calculator</span>
+                        </Button>
                         <Sheet open={isOpen} onOpenChange={setIsOpen}>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-10 w-10">
@@ -100,12 +111,36 @@ export function Navigation() {
                                             </Link>
                                         );
                                     })}
+                                    <Button
+                                        variant="ghost"
+                                        className="flex items-center justify-start gap-3 px-4 py-3 h-auto rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent w-full"
+                                        onClick={() => {
+                                            setIsOpen(false);
+                                            setIsGSTOpen(true);
+                                        }}
+                                    >
+                                        <Percent className="h-5 w-5" />
+                                        GST Calculator
+                                    </Button>
                                 </div>
                             </SheetContent>
                         </Sheet>
                     </div>
+
+                    {/* Desktop GST Button */}
+                    <div className="hidden lg:flex items-center ml-auto">
+                        <Button
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => setIsGSTOpen(true)}
+                        >
+                            <Percent className="h-4 w-4" />
+                            GST Calculator
+                        </Button>
+                    </div>
                 </div>
             </div>
+            <GSTCalculator isOpen={isGSTOpen} onClose={() => setIsGSTOpen(false)} />
         </nav>
     );
 }
