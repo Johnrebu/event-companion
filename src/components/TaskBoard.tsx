@@ -14,8 +14,17 @@ import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { TaskColumn, Column } from "./TaskColumn";
 import { TaskCard, Task } from "./TaskCard";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, User as UserIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { TEAM_MEMBERS, User } from "@/types/user";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const defaultCols: Column[] = [
     {
@@ -37,11 +46,13 @@ const defaultTasks: Task[] = [
         id: "1",
         columnId: "todo",
         content: "Review project requirements",
+        assigneeId: "johnson",
     },
     {
         id: "2",
         columnId: "in-progress",
         content: "Design database schema",
+        assigneeId: "kavya",
     },
     {
         id: "3",
@@ -65,6 +76,26 @@ export function TaskBoard() {
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+    const [currentUser, setCurrentUser] = useState<User | null>(() => {
+        const saved = localStorage.getItem("current-user");
+        return saved ? JSON.parse(saved) : TEAM_MEMBERS[0];
+    });
+
+    useEffect(() => {
+        const handleUserChange = () => {
+            const saved = localStorage.getItem("current-user");
+            if (saved) setCurrentUser(JSON.parse(saved));
+        };
+        window.addEventListener('user-changed', handleUserChange);
+        return () => window.removeEventListener('user-changed', handleUserChange);
+    }, []);
+
+    const filteredTasks = useMemo(() => {
+        if (!currentUser) return tasks;
+        if (currentUser.role === 'manager') return tasks;
+        return tasks.filter(task => task.assigneeId === currentUser.id);
+    }, [tasks, currentUser]);
+
     useEffect(() => {
         localStorage.setItem("kanban-columns", JSON.stringify(columns));
     }, [columns]);
@@ -81,11 +112,12 @@ export function TaskBoard() {
         })
     );
 
-    function createTask(columnId: string, content: string) {
+    function createTask(columnId: string, content: string, assigneeId?: string) {
         const newTask: Task = {
             id: generateId(),
             columnId,
             content: content,
+            assigneeId: assigneeId,
         };
 
         setTasks([...tasks, newTask]);
@@ -200,9 +232,10 @@ export function TaskBoard() {
                             <TaskColumn
                                 key={col.id}
                                 column={col}
-                                tasks={tasks.filter((task) => task.columnId === col.id)}
+                                tasks={filteredTasks.filter((task) => task.columnId === col.id)}
                                 createTask={createTask}
                                 deleteTask={deleteTask}
+                                isManager={currentUser?.role === 'manager'}
                             />
                         ))}
                     </SortableContext>

@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { TEAM_MEMBERS } from "@/types/user";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User as UserIcon, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface Column {
     id: string; // 'todo', 'in-progress', 'done'
@@ -16,13 +27,15 @@ export interface Column {
 interface TaskColumnProps {
     column: Column;
     tasks: Task[];
-    createTask: (columnId: string, content: string) => void;
+    createTask: (columnId: string, content: string, assigneeId?: string) => void;
     deleteTask: (taskId: string) => void;
+    isManager: boolean;
 }
 
-export function TaskColumn({ column, tasks, createTask, deleteTask }: TaskColumnProps) {
+export function TaskColumn({ column, tasks, createTask, deleteTask, isManager }: TaskColumnProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [newCardContent, setNewCardContent] = useState("");
+    const [selectedAssignee, setSelectedAssignee] = useState<string | undefined>(undefined);
 
     const tasksIds = useMemo(() => {
         return tasks.map((task) => task.id);
@@ -33,11 +46,9 @@ export function TaskColumn({ column, tasks, createTask, deleteTask }: TaskColumn
             setIsAdding(false);
             return;
         }
-        createTask(column.id, newCardContent);
+        createTask(column.id, newCardContent, selectedAssignee);
         setNewCardContent("");
-        // Keep isAdding true to allow adding multiple cards quickly? Trello does this.
-        // Let's keep it open.
-        // But reset content.
+        setSelectedAssignee(undefined);
     };
 
     const { setNodeRef } = useDroppable({
@@ -113,11 +124,60 @@ export function TaskColumn({ column, tasks, createTask, deleteTask }: TaskColumn
                             >
                                 Add card
                             </Button>
+
+                            {isManager && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className={cn(
+                                                "h-8 w-8 rounded-lg",
+                                                selectedAssignee ? "text-blue-500 bg-blue-500/10" : "text-gray-400 hover:text-white hover:bg-white/10"
+                                            )}
+                                        >
+                                            <UserIcon className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-56 bg-[#101204] border-white/10">
+                                        <DropdownMenuLabel className="text-gray-400 font-normal">Assign to...</DropdownMenuLabel>
+                                        <DropdownMenuSeparator className="bg-white/5" />
+                                        <DropdownMenuItem
+                                            className="text-white hover:bg-white/10"
+                                            onClick={() => setSelectedAssignee(undefined)}
+                                        >
+                                            <div className="flex items-center gap-2 w-full">
+                                                <span>Unassigned</span>
+                                                {!selectedAssignee && <Check className="h-3 w-3 ml-auto text-blue-500" />}
+                                            </div>
+                                        </DropdownMenuItem>
+                                        {TEAM_MEMBERS.filter(u => u.role === 'member').map((user) => (
+                                            <DropdownMenuItem
+                                                key={user.id}
+                                                className="text-white hover:bg-white/10"
+                                                onClick={() => setSelectedAssignee(user.id)}
+                                            >
+                                                <div className="flex items-center gap-2 w-full">
+                                                    <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold uppercase">
+                                                        {user.name.split(' ').map(n => n[0]).join('')}
+                                                    </div>
+                                                    <span>{user.name}</span>
+                                                    {selectedAssignee === user.id && <Check className="h-3 w-3 ml-auto text-blue-500" />}
+                                                </div>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setIsAdding(false)}
-                                className="text-gray-400 hover:text-white hover:bg-transparent h-8 w-8"
+                                onClick={() => {
+                                    setIsAdding(false);
+                                    setSelectedAssignee(undefined);
+                                }}
+                                className="text-gray-400 hover:text-white hover:bg-transparent h-8 w-8 ml-auto"
                             >
                                 <X className="h-5 w-5" />
                             </Button>

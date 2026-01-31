@@ -11,7 +11,16 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { useState } from "react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from "react";
+import { TEAM_MEMBERS, User } from "@/types/user";
 
 const navItems = [
     { path: "/", label: "Home", icon: Home },
@@ -27,6 +36,19 @@ export function Navigation() {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [isGSTOpen, setIsGSTOpen] = useState(false);
+
+    const [currentUser, setCurrentUser] = useState<User | null>(() => {
+        const saved = localStorage.getItem("current-user");
+        return saved ? JSON.parse(saved) : TEAM_MEMBERS[0];
+    });
+
+    useEffect(() => {
+        if (currentUser) {
+            localStorage.setItem("current-user", JSON.stringify(currentUser));
+            // Dispatch a custom event to notify other components of user change
+            window.dispatchEvent(new Event('user-changed'));
+        }
+    }, [currentUser]);
 
     return (
         <nav className="bg-card border-b sticky top-0 z-50">
@@ -128,8 +150,40 @@ export function Navigation() {
                         </Sheet>
                     </div>
 
-                    {/* Desktop GST Button */}
-                    <div className="hidden lg:flex items-center ml-auto">
+                    {/* Desktop User Switcher */}
+                    <div className="hidden lg:flex items-center ml-auto gap-4">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="gap-2">
+                                    <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                                        {currentUser?.name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                    <span>{currentUser?.name}</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>Switch User</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {TEAM_MEMBERS.map((user) => (
+                                    <DropdownMenuItem
+                                        key={user.id}
+                                        onClick={() => setCurrentUser(user)}
+                                        className={currentUser?.id === user.id ? "bg-accent" : ""}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                                                {user.name.split(' ').map(n => n[0]).join('')}
+                                            </div>
+                                            <span>{user.name}</span>
+                                            <span className="text-xs text-muted-foreground ml-auto">
+                                                ({user.role})
+                                            </span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Button
                             variant="outline"
                             className="gap-2"
