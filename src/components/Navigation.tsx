@@ -145,6 +145,34 @@ export function Navigation() {
                                         <Percent className="h-5 w-5" />
                                         GST Calculator
                                     </Button>
+
+                                    <div className="mt-4 pt-4 border-t">
+                                        <p className="text-xs font-semibold text-muted-foreground mb-3 px-4 uppercase tracking-wider">Switch User</p>
+                                        <div className="flex flex-col gap-1">
+                                            {TEAM_MEMBERS.map((user) => (
+                                                <Button
+                                                    key={user.id}
+                                                    variant="ghost"
+                                                    className={cn(
+                                                        "flex items-center justify-start gap-3 px-4 py-3 h-auto rounded-lg text-base font-medium transition-colors w-full",
+                                                        currentUser?.id === user.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                                                    )}
+                                                    onClick={() => {
+                                                        setCurrentUser(user);
+                                                        setIsOpen(false);
+                                                    }}
+                                                >
+                                                    <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase ring-1 ring-white/10">
+                                                        {user.name.split(' ').map(n => n[0]).join('')}
+                                                    </div>
+                                                    <div className="flex flex-col items-start">
+                                                        <span className="leading-none">{user.name}</span>
+                                                        <span className="text-[10px] opacity-70 mt-1">{user.role}</span>
+                                                    </div>
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </SheetContent>
                         </Sheet>

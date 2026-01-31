@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { TEAM_MEMBERS } from "@/types/user";
+import { TEAM_MEMBERS, User } from "@/types/user";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,10 +29,12 @@ interface TaskColumnProps {
     tasks: Task[];
     createTask: (columnId: string, content: string, assigneeId?: string) => void;
     deleteTask: (taskId: string) => void;
-    isManager: boolean;
+    assignTask: (taskId: string, assigneeId?: string) => void;
+    currentUser: User | null;
 }
 
-export function TaskColumn({ column, tasks, createTask, deleteTask, isManager }: TaskColumnProps) {
+export function TaskColumn({ column, tasks, createTask, deleteTask, assignTask, currentUser }: TaskColumnProps) {
+    const isManager = currentUser?.role === 'manager';
     const [isAdding, setIsAdding] = useState(false);
     const [newCardContent, setNewCardContent] = useState("");
     const [selectedAssignee, setSelectedAssignee] = useState<string | undefined>(undefined);
@@ -82,7 +84,13 @@ export function TaskColumn({ column, tasks, createTask, deleteTask, isManager }:
             >
                 <SortableContext items={tasksIds}>
                     {tasks.map((task) => (
-                        <TaskCard key={task.id} task={task} deleteTask={deleteTask} />
+                        <TaskCard
+                            key={task.id}
+                            task={task}
+                            deleteTask={deleteTask}
+                            onAssign={assignTask}
+                            currentUser={currentUser}
+                        />
                     ))}
                 </SortableContext>
             </div>

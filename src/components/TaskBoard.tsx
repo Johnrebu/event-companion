@@ -117,7 +117,7 @@ export function TaskBoard() {
             id: generateId(),
             columnId,
             content: content,
-            assigneeId: assigneeId,
+            assigneeId: assigneeId || (currentUser?.role === 'member' ? currentUser.id : undefined),
         };
 
         setTasks([...tasks, newTask]);
@@ -126,6 +126,14 @@ export function TaskBoard() {
     function deleteTask(id: string) {
         const newTasks = tasks.filter((task) => task.id !== id);
         setTasks(newTasks);
+    }
+
+    function assignTask(taskId: string, assigneeId?: string) {
+        setTasks((prev) =>
+            prev.map((task) =>
+                task.id === taskId ? { ...task, assigneeId } : task
+            )
+        );
     }
 
     function onDragStart(event: DragStartEvent) {
@@ -235,7 +243,8 @@ export function TaskBoard() {
                                 tasks={filteredTasks.filter((task) => task.columnId === col.id)}
                                 createTask={createTask}
                                 deleteTask={deleteTask}
-                                isManager={currentUser?.role === 'manager'}
+                                assignTask={assignTask}
+                                currentUser={currentUser}
                             />
                         ))}
                     </SortableContext>
@@ -284,6 +293,8 @@ export function TaskBoard() {
                             <TaskCard
                                 task={activeTask}
                                 deleteTask={deleteTask}
+                                onAssign={assignTask}
+                                currentUser={currentUser}
                             />
                         )}
                     </DragOverlay>,
