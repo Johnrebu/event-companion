@@ -25,6 +25,23 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { Priority } from "./TaskCard";
 
 const defaultCols: Column[] = [
     {
@@ -75,6 +92,7 @@ export function TaskBoard() {
 
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
         const saved = localStorage.getItem("current-user");
@@ -132,6 +150,30 @@ export function TaskBoard() {
         setTasks((prev) =>
             prev.map((task) =>
                 task.id === taskId ? { ...task, assigneeId } : task
+            )
+        );
+    }
+
+    function moveTask(taskId: string, direction: 'left' | 'right') {
+        setTasks((prev) => {
+            const task = prev.find(t => t.id === taskId);
+            if (!task) return prev;
+
+            const currentColIndex = columns.findIndex(col => col.id === task.columnId);
+            const nextColIndex = direction === 'left' ? currentColIndex - 1 : currentColIndex + 1;
+
+            if (nextColIndex < 0 || nextColIndex >= columns.length) return prev;
+
+            return prev.map(t =>
+                t.id === taskId ? { ...t, columnId: columns[nextColIndex].id } : t
+            );
+        });
+    }
+
+    function updateTask(taskId: string, updates: Partial<Task>) {
+        setTasks((prev) =>
+            prev.map((task) =>
+                task.id === taskId ? { ...task, ...updates } : task
             )
         );
     }
@@ -244,6 +286,8 @@ export function TaskBoard() {
                                 createTask={createTask}
                                 deleteTask={deleteTask}
                                 assignTask={assignTask}
+                                moveTask={moveTask}
+                                onCardClick={setEditingTask}
                                 currentUser={currentUser}
                             />
                         ))}
@@ -294,12 +338,71 @@ export function TaskBoard() {
                                 task={activeTask}
                                 deleteTask={deleteTask}
                                 onAssign={assignTask}
+                                onMove={moveTask}
                                 currentUser={currentUser}
                             />
                         )}
                     </DragOverlay>,
                     document.body
                 )}
+
+                <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+                    <DialogContent className="bg-[#161b22] border-gray-700 text-white shadow-2xl rounded-2xl sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold tracking-tight">Edit Task</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-6 py-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-400 uppercase tracking-wider">Description</label>
+                                <Textarea
+                                    value={editingTask?.content || ""}
+                                    onChange={(e) => editingTask && setEditingTask({ ...editingTask, content: e.target.value })}
+                                    className="bg-[#0d1117] border-gray-700 focus:border-blue-500 min-h-[120px] resize-none text-gray-100 rounded-xl"
+                                    placeholder="What needs to be done?"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-400 uppercase tracking-wider">Priority</label>
+                                <Select
+                                    value={editingTask?.priority || "medium"}
+                                    onValueChange={(value: Priority) => editingTask && setEditingTask({ ...editingTask, priority: value })}
+                                >
+                                    <SelectTrigger className="bg-[#0d1117] border-gray-700 focus:ring-blue-500 rounded-xl">
+                                        <SelectValue placeholder="Select priority" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#161b22] border-gray-700 text-white rounded-xl">
+                                        <SelectItem value="low" className="focus:bg-gray-800 rounded-lg">Low</SelectItem>
+                                        <SelectItem value="medium" className="focus:bg-gray-800 rounded-lg">Medium</SelectItem>
+                                        <SelectItem value="high" className="focus:bg-gray-800 rounded-lg text-rose-400">High</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setEditingTask(null)}
+                                className="text-gray-400 hover:text-white hover:bg-white/5 rounded-xl"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    if (editingTask) {
+                                        updateTask(editingTask.id, {
+                                            content: editingTask.content,
+                                            priority: editingTask.priority
+                                        });
+                                        setEditingTask(null);
+                                    }
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 shadow-lg shadow-blue-900/20"
+                            >
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </DndContext>
         </div>
     );

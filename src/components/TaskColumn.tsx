@@ -30,10 +30,12 @@ interface TaskColumnProps {
     createTask: (columnId: string, content: string, assigneeId?: string) => void;
     deleteTask: (taskId: string) => void;
     assignTask: (taskId: string, assigneeId?: string) => void;
+    moveTask: (taskId: string, direction: 'left' | 'right') => void;
+    onCardClick?: (task: Task) => void;
     currentUser: User | null;
 }
 
-export function TaskColumn({ column, tasks, createTask, deleteTask, assignTask, currentUser }: TaskColumnProps) {
+export function TaskColumn({ column, tasks, createTask, deleteTask, assignTask, moveTask, onCardClick, currentUser }: TaskColumnProps) {
     const isManager = currentUser?.role === 'manager';
     const [isAdding, setIsAdding] = useState(false);
     const [newCardContent, setNewCardContent] = useState("");
@@ -80,18 +82,29 @@ export function TaskColumn({ column, tasks, createTask, deleteTask, assignTask, 
             {/* Droppable Zone */}
             <div
                 ref={setNodeRef}
-                className="flex flex-grow flex-col gap-2 p-2 px-2 overflow-x-hidden overflow-y-auto custom-scrollbar min-h-[50px]"
+                className="flex flex-grow flex-col gap-2 p-2 px-2 overflow-x-hidden overflow-y-auto custom-scrollbar min-h-[100px]"
             >
                 <SortableContext items={tasksIds}>
-                    {tasks.map((task) => (
-                        <TaskCard
-                            key={task.id}
-                            task={task}
-                            deleteTask={deleteTask}
-                            onAssign={assignTask}
-                            currentUser={currentUser}
-                        />
-                    ))}
+                    {tasks.length > 0 ? (
+                        tasks.map((task) => (
+                            <TaskCard
+                                key={task.id}
+                                task={task}
+                                deleteTask={deleteTask}
+                                onAssign={assignTask}
+                                onMove={moveTask}
+                                onClick={onCardClick}
+                                currentUser={currentUser}
+                            />
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full py-8 border-2 border-dashed border-white/5 rounded-xl opacity-40">
+                            <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center mb-2">
+                                <Plus className="h-4 w-4" />
+                            </div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Tasks</p>
+                        </div>
+                    )}
                 </SortableContext>
             </div>
 
