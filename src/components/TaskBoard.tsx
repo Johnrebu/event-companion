@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
     DndContext,
@@ -12,9 +12,9 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { TaskColumn, Column } from "./TaskColumn";
-import { TaskCard, Task } from "./TaskCard";
+import { TaskCard, Task, Priority } from "./TaskCard";
 import { Button } from "@/components/ui/button";
-import { Plus, User as UserIcon } from "lucide-react";
+import { Plus, User as UserIcon, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TEAM_MEMBERS, User } from "@/types/user";
 import {
@@ -41,54 +41,16 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Priority } from "./TaskCard";
-
-const defaultCols: Column[] = [
-    {
-        id: "todo",
-        title: "To Do",
-    },
-    {
-        id: "in-progress",
-        title: "In Progress",
-    },
-    {
-        id: "done",
-        title: "Done",
-    },
-];
-
-const defaultTasks: Task[] = [
-    {
-        id: "1",
-        columnId: "todo",
-        content: "Review project requirements",
-        assigneeId: "johnson",
-    },
-    {
-        id: "2",
-        columnId: "in-progress",
-        content: "Design database schema",
-        assigneeId: "kavya",
-    },
-    {
-        id: "3",
-        columnId: "done",
-        content: "Initialize project repo",
-    },
-];
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 export function TaskBoard() {
-    const [columns, setColumns] = useState<Column[]>(() => {
-        const saved = localStorage.getItem("kanban-columns");
-        return saved ? JSON.parse(saved) : defaultCols;
-    });
-    const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+    const { toast } = useToast();
+    const [columns, setColumns] = useState<Column[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [tasks, setTasks] = useState<Task[]>(() => {
-        const saved = localStorage.getItem("kanban-tasks");
-        return saved ? JSON.parse(saved) : defaultTasks;
-    });
+    const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -98,6 +60,59 @@ export function TaskBoard() {
         const saved = localStorage.getItem("current-user");
         return saved ? JSON.parse(saved) : TEAM_MEMBERS[0];
     });
+
+    const fetchBoardData = useCallback(async () => {
+        try {
+            const [colsRes, tasksRes] = await Promise.all([
+                supabase.from('kanban_columns').select('*').order('order', { ascending: true }),
+                supabase.from('kanban_tasks').select('*')
+            ]);
+
+            if (colsRes.error) throw colsRes.error;
+            if (tasksRes.error) throw tasksRes.error;
+
+            setColumns(colsRes.data as Column[]);
+            setTasks((tasksRes.data || []).map(t => ({
+                id: t.id,
+                columnId: t.column_id,
+                content: t.content,
+                assigneeId: t.assignee_id,
+                priority: t.priority
+            })));
+        } catch (error) {
+            console.error("Error fetching board data:", error);
+            toast({
+                title: "Error",
+                description: "Failed to load task board",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchBoardData();
+
+        const columnsChannel = supabase
+            .channel('kanban_columns_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'kanban_columns' }, () => {
+                fetchBoardData();
+            })
+            .subscribe();
+
+        const tasksChannel = supabase
+            .channel('kanban_tasks_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'kanban_tasks' }, () => {
+                fetchBoardData();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(columnsChannel);
+            supabase.removeChannel(tasksChannel);
+        };
+    }, [fetchBoardData]);
 
     useEffect(() => {
         const handleUserChange = () => {
@@ -114,14 +129,6 @@ export function TaskBoard() {
         return tasks.filter(task => task.assigneeId === currentUser.id);
     }, [tasks, currentUser]);
 
-    useEffect(() => {
-        localStorage.setItem("kanban-columns", JSON.stringify(columns));
-    }, [columns]);
-
-    useEffect(() => {
-        localStorage.setItem("kanban-tasks", JSON.stringify(tasks));
-    }, [tasks]);
-
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -130,52 +137,74 @@ export function TaskBoard() {
         })
     );
 
-    function createTask(columnId: string, content: string, assigneeId?: string) {
-        const newTask: Task = {
-            id: generateId(),
-            columnId,
+    async function createTask(columnId: string, content: string, assigneeId?: string) {
+        const id = Math.floor(Math.random() * 10001).toString();
+        const newTask = {
+            id,
+            column_id: columnId,
             content: content,
-            assigneeId: assigneeId || (currentUser?.role === 'member' ? currentUser.id : undefined),
+            assignee_id: assigneeId || (currentUser?.role === 'member' ? currentUser.id : undefined),
+            priority: 'medium' as Priority
         };
 
-        setTasks([...tasks, newTask]);
+        const { error } = await supabase.from('kanban_tasks').insert(newTask);
+        if (error) {
+            toast({ title: "Error", description: "Failed to create task", variant: "destructive" });
+        }
     }
 
-    function deleteTask(id: string) {
-        const newTasks = tasks.filter((task) => task.id !== id);
-        setTasks(newTasks);
+    async function deleteTask(id: string) {
+        const { error } = await supabase.from('kanban_tasks').delete().eq('id', id);
+        if (error) {
+            toast({ title: "Error", description: "Failed to delete task", variant: "destructive" });
+        }
     }
 
-    function assignTask(taskId: string, assigneeId?: string) {
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id === taskId ? { ...task, assigneeId } : task
-            )
-        );
+    async function assignTask(taskId: string, assigneeId?: string) {
+        const { error } = await supabase
+            .from('kanban_tasks')
+            .update({ assignee_id: assigneeId })
+            .eq('id', taskId);
+
+        if (error) {
+            toast({ title: "Error", description: "Failed to assign task", variant: "destructive" });
+        }
     }
 
-    function moveTask(taskId: string, direction: 'left' | 'right') {
-        setTasks((prev) => {
-            const task = prev.find(t => t.id === taskId);
-            if (!task) return prev;
+    async function moveTask(taskId: string, direction: 'left' | 'right') {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
 
-            const currentColIndex = columns.findIndex(col => col.id === task.columnId);
-            const nextColIndex = direction === 'left' ? currentColIndex - 1 : currentColIndex + 1;
+        const currentColIndex = columns.findIndex(col => col.id === task.columnId);
+        const targetColIndex = direction === 'left' ? currentColIndex - 1 : currentColIndex + 1;
 
-            if (nextColIndex < 0 || nextColIndex >= columns.length) return prev;
+        if (targetColIndex < 0 || targetColIndex >= columns.length) return;
 
-            return prev.map(t =>
-                t.id === taskId ? { ...t, columnId: columns[nextColIndex].id } : t
-            );
-        });
+        const { error } = await supabase
+            .from('kanban_tasks')
+            .update({ column_id: columns[targetColIndex].id })
+            .eq('id', taskId);
+
+        if (error) {
+            toast({ title: "Error", description: "Failed to move task", variant: "destructive" });
+        }
     }
 
-    function updateTask(taskId: string, updates: Partial<Task>) {
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id === taskId ? { ...task, ...updates } : task
-            )
-        );
+    async function updateTask(taskId: string, updates: Partial<Task>) {
+        const dbUpdates: Record<string, string | Priority | undefined> = {};
+        if (updates.content !== undefined) dbUpdates.content = updates.content;
+        if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+        if (updates.columnId !== undefined) dbUpdates.column_id = updates.columnId;
+        if (updates.assigneeId !== undefined) dbUpdates.assignee_id = updates.assigneeId;
+
+        const { error } = await supabase
+            .from('kanban_tasks')
+            .update(dbUpdates)
+            .eq('id', taskId);
+
+        if (error) {
+            toast({ title: "Error", description: "Failed to update task", variant: "destructive" });
+        }
     }
 
     function onDragStart(event: DragStartEvent) {
@@ -190,7 +219,7 @@ export function TaskBoard() {
         }
     }
 
-    function onDragEnd(event: DragEndEvent) {
+    async function onDragEnd(event: DragEndEvent) {
         setActiveColumn(null);
         setActiveTask(null);
 
@@ -203,7 +232,7 @@ export function TaskBoard() {
         if (activeId === overId) return;
     }
 
-    function onDragOver(event: DragOverEvent) {
+    async function onDragOver(event: DragOverEvent) {
         const { active, over } = event;
         if (!over) return;
 
@@ -217,53 +246,55 @@ export function TaskBoard() {
 
         if (!isActiveTask) return;
 
-        // Im dropping a Task over another Task
         if (isActiveTask && isOverTask) {
-            setTasks((tasks) => {
-                const activeIndex = tasks.findIndex((t) => t.id === activeId);
-                const overIndex = tasks.findIndex((t) => t.id === overId);
+            const activeTaskObj = tasks.find(t => t.id === activeId);
+            const overTaskObj = tasks.find(t => t.id === overId);
 
-                if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
-                    tasks[activeIndex].columnId = tasks[overIndex].columnId;
-                    return arrayMove(tasks, activeIndex, overIndex - 1);
-                }
-
-                return arrayMove(tasks, activeIndex, overIndex);
-            });
+            if (activeTaskObj && overTaskObj && activeTaskObj.columnId !== overTaskObj.columnId) {
+                await updateTask(activeId as string, { columnId: overTaskObj.columnId });
+            }
         }
 
         const isOverColumn = over.data.current?.type === "Column";
 
-        // Im dropping a Task over a column
         if (isActiveTask && isOverColumn) {
-            setTasks((tasks) => {
-                const activeIndex = tasks.findIndex((t) => t.id === activeId);
-                tasks[activeIndex].columnId = overId as string;
-                return arrayMove(tasks, activeIndex, activeIndex);
-            });
+            const activeTaskObj = tasks.find(t => t.id === activeId);
+            if (activeTaskObj && activeTaskObj.columnId !== overId) {
+                await updateTask(activeId as string, { columnId: overId as string });
+            }
         }
-    }
-
-
-    function generateId() {
-        return Math.floor(Math.random() * 10001).toString();
     }
 
     const [newColumnTitle, setNewColumnTitle] = useState("");
     const [isAddingColumn, setIsAddingColumn] = useState(false);
 
-    function addColumn() {
+    async function addColumn() {
         if (!newColumnTitle.trim()) {
             setIsAddingColumn(false);
             return;
         }
-        const newCol: Column = {
-            id: generateId(),
+
+        const id = Math.floor(Math.random() * 10001).toString();
+        const { error } = await supabase.from('kanban_columns').insert({
+            id,
             title: newColumnTitle,
-        };
-        setColumns([...columns, newCol]);
-        setNewColumnTitle("");
-        setIsAddingColumn(false);
+            order: columns.length + 1
+        });
+
+        if (error) {
+            toast({ title: "Error", description: "Failed to add list", variant: "destructive" });
+        } else {
+            setNewColumnTitle("");
+            setIsAddingColumn(false);
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (
@@ -293,7 +324,6 @@ export function TaskBoard() {
                         ))}
                     </SortableContext>
 
-                    {/* Add List Section */}
                     <div className="min-w-[272px] w-[272px]">
                         {!isAddingColumn ? (
                             <Button
@@ -331,7 +361,7 @@ export function TaskBoard() {
                 {createPortal(
                     <DragOverlay>
                         {activeColumn && (
-                            <div className="opacity-50">dragging column...</div>
+                            <div className="opacity-50 text-white">dragging column...</div>
                         )}
                         {activeTask && (
                             <TaskCard
