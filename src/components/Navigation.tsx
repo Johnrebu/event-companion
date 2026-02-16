@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FileSpreadsheet, CalendarDays, FolderOpen, ClipboardCheck, Zap, Home, Menu, Percent, LayoutList } from "lucide-react";
+import { FileSpreadsheet, CalendarDays, FolderOpen, ClipboardCheck, Zap, Home, Menu, Percent, LayoutList, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coronaLogo from "@/assets/corona-logo.png";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const navItems = [
     { path: "/sop", label: "Pre-Event", icon: ClipboardCheck },
     { path: "/corona-sop", label: "Event SOP", icon: Zap },
     { path: "/tasks", label: "Task Board", icon: LayoutList },
+    { path: "/roadmap", label: "Roadmap", icon: TrendingUp },
 ];
 
 export function Navigation() {

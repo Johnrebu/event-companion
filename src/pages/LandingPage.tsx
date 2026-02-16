@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, FileSpreadsheet, ClipboardCheck, Zap } from "lucide-react";
+import { ArrowRight, CalendarDays, FileSpreadsheet, ClipboardCheck, Zap, TrendingUp } from "lucide-react";
 import coronaLogo from "@/assets/corona-logo.png";
 
 const LandingPage = () => {
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden">
+        <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
             {/* Hero Section */}
             <section className="relative min-h-screen flex flex-col items-center justify-center px-6">
                 {/* Background gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#111] to-[#0a0a0a]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
 
                 {/* Grid pattern overlay */}
@@ -113,6 +113,13 @@ const LandingPage = () => {
                                 description: "Execute with precision & speed",
                                 link: "/corona-sop",
                                 gradient: "from-amber-500/20 to-amber-600/5"
+                            },
+                            {
+                                icon: TrendingUp,
+                                title: "Roadmap",
+                                description: "Strategic vision for 2026-2027",
+                                link: "/roadmap",
+                                gradient: "from-red-500/20 to-red-600/5"
                             }
                         ].map((feature, index) => (
                             <Link

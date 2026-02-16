@@ -276,7 +276,7 @@ export default function SOPPage() {
     const overallProgress = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 pb-20 print:p-0 print:bg-white">
+        <div className="min-h-screen bg-slate-950 text-white pb-12 print:p-0 print:bg-white">
             <div className="container mx-auto px-4 py-8 max-w-4xl print:max-w-none print:px-0">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 print:mb-8">
                     <div className="space-y-4">

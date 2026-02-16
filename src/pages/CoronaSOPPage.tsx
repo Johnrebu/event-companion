@@ -248,7 +248,7 @@ export default function CoronaSOPPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-20 print:p-0 print:bg-white">
+        <div className="min-h-screen bg-slate-950 text-white pb-20 print:p-0 print:bg-white">
             {/* Hero Header */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-blue-500/10" />
