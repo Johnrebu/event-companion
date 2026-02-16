@@ -1,4 +1,5 @@
 import { TrendingUp, Target, Globe, Users, Trophy, Rocket, Briefcase, Calendar, Star, Shield, Zap, ArrowUpRight, DollarSign, PieChart } from "lucide-react";
+import coronaLogo from "@/assets/corona-logo.png";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -302,7 +303,7 @@ export default function RoadmapPage() {
                                 "To position Aionion Capital as the most trusted Tamil investment brand globally."
                             </p>
                             <div className="flex justify-center gap-8 mt-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
-                                <img src="/src/assets/corona-logo.png" className="h-12 w-auto" alt="Logo" />
+                                <img src={coronaLogo} className="h-12 w-auto" alt="Logo" />
                                 <div className="h-12 w-px bg-white/20" />
                                 <div className="flex items-center gap-2 font-black text-2xl tracking-tighter text-white">
                                     AIONION <span className="text-amber-500">CAPITAL</span>
