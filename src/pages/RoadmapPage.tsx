@@ -71,18 +71,35 @@ export default function RoadmapPage() {
                         </CardHeader>
                         <CardContent className="pt-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {[
-                                    { title: "Scalable Lead Gen", desc: "Building high-volume, quality funnel systems", icon: TrendingUp },
-                                    { title: "Client Trust", desc: "Enhancing retention through premium events", icon: Shield },
-                                    { title: "Global Tamils", desc: "Expanding into UAE, Singapore, US, and EU", icon: Globe },
-                                    { title: "HNI Premium", desc: "Exclusive roundtable for high-value prospects", icon: Star },
-                                ].map((item, i) => (
-                                    <div key={i} className="group p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] transition-all duration-300">
-                                        <item.icon className="h-8 w-8 text-amber-500 mb-3" />
-                                        <h4 className="text-white font-bold mb-1">{item.title}</h4>
-                                        <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                                <div className="space-y-6">
+                                    {[
+                                        { title: "Scalable Lead Gen", desc: "Building high-volume, quality funnel systems", icon: TrendingUp },
+                                        { title: "Client Trust", desc: "Enhancing retention through premium events", icon: Shield },
+                                        { title: "Global Tamils", desc: "Expanding into UAE, Singapore, US, and EU", icon: Globe },
+                                        { title: "HNI Premium", desc: "Exclusive roundtable for high-value prospects", icon: Star },
+                                    ].map((item, i) => (
+                                        <div key={i} className="group p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] transition-all duration-300">
+                                            <div className="flex gap-4">
+                                                <item.icon className="h-6 w-6 text-amber-500 shrink-0" />
+                                                <div>
+                                                    <h4 className="text-white font-bold mb-1">{item.title}</h4>
+                                                    <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="relative rounded-2xl overflow-hidden border border-white/10 min-h-[300px]">
+                                    <img
+                                        src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=1000"
+                                        className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000"
+                                        alt="Vision"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+                                    <div className="absolute bottom-4 left-4">
+                                        <Badge className="bg-amber-500 text-black">Strategic Intent</Badge>
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -138,7 +155,15 @@ export default function RoadmapPage() {
                                     </div>
                                     <CardDescription className="text-slate-400">Existing Clients | Trust | Retention | Referrals</CardDescription>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-4">
+                                    <div className="relative h-32 rounded-lg overflow-hidden border border-white/5">
+                                        <img
+                                            src="https://images.unsplash.com/photo-1560523160-754a9e25c68f?auto=format&fit=crop&q=80&w=800"
+                                            className="w-full h-full object-cover opacity-50"
+                                            alt="Capital Connect"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 group-hover:from-blue-500/20 transition-all" />
+                                    </div>
                                     <ul className="space-y-3 text-slate-300 text-sm">
                                         <li className="flex items-center gap-2">
                                             <ArrowUpRight className="h-4 w-4 text-blue-500" />
@@ -162,7 +187,15 @@ export default function RoadmapPage() {
                                     </div>
                                     <CardDescription className="text-slate-400">New Acquisition | Lead Generation | Community</CardDescription>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-4">
+                                    <div className="relative h-32 rounded-lg overflow-hidden border border-white/5">
+                                        <img
+                                            src="https://images.unsplash.com/photo-1540575861501-7ce058a877c3?auto=format&fit=crop&q=80&w=800"
+                                            className="w-full h-full object-cover opacity-50"
+                                            alt="Fans Meet"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 group-hover:from-amber-500/20 transition-all" />
+                                    </div>
                                     <ul className="space-y-3 text-slate-300 text-sm">
                                         <li className="flex items-center gap-2">
                                             <ArrowUpRight className="h-4 w-4 text-amber-500" />
@@ -181,13 +214,18 @@ export default function RoadmapPage() {
                     {/* Chart Section */}
                     <section className="bg-white/[0.02] border border-white/5 rounded-3xl p-8">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                            <div>
-                                <h2 className="text-3xl font-bold text-white">Growth Analytics</h2>
-                                <p className="text-slate-500">Projected metrics for 2025 – 2027</p>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 relative z-10">
+                                <div>
+                                    <h2 className="text-3xl font-bold text-white">Growth Analytics</h2>
+                                    <p className="text-slate-500">Projected metrics for 2025 – 2027</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20">Leads</Badge>
+                                    <Badge variant="secondary" className="bg-blue-400/10 text-blue-400 border-blue-400/20">Events</Badge>
+                                </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20">Leads</Badge>
-                                <Badge variant="secondary" className="bg-blue-400/10 text-blue-400 border-blue-400/20">Events</Badge>
+                            <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none">
+                                <Globe className="w-full h-full text-white" />
                             </div>
                         </div>
                         <div className="h-[400px] w-full">
@@ -279,6 +317,14 @@ export default function RoadmapPage() {
                                 <div key={i} className="relative group p-6 rounded-2xl bg-slate-900/40 backdrop-blur-sm border border-white/10 hover:border-amber-500/30 transition-all duration-500 overflow-hidden">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
                                         <Calendar className="h-12 w-12 text-white" />
+                                    </div>
+                                    <div className="relative h-24 mb-4 rounded-lg overflow-hidden border border-white/5">
+                                        <img
+                                            src={`https://images.unsplash.com/photo-${i === 0 ? '1505373877841-8d25f7d46678' : i === 1 ? '1540575861501-7ce058a877c3' : i === 2 ? '1517245386807-bb43f82c33c4' : i === 3 ? '1551818255-e6e10975bc17' : i === 4 ? '1526304640581-d334cdbbf45e' : '1504384308090-c894fdcc538d'}?auto=format&fit=crop&q=80&w=600`}
+                                            className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
+                                            alt={cal.event}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
                                     </div>
                                     <div className="flex items-center gap-2 mb-4">
                                         <Badge variant="secondary" className="bg-amber-500 text-black font-black px-2 py-0">{cal.month}</Badge>
