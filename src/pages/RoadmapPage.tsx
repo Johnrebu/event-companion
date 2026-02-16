@@ -190,7 +190,7 @@ export default function RoadmapPage() {
                                 <CardContent className="space-y-4">
                                     <div className="relative h-32 rounded-lg overflow-hidden border border-white/5">
                                         <img
-                                            src="https://images.unsplash.com/photo-1540575861501-7ce058a877c3?auto=format&fit=crop&q=80&w=800"
+                                            src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&q=80&w=800"
                                             className="w-full h-full object-cover opacity-50"
                                             alt="Fans Meet"
                                         />
@@ -320,7 +320,7 @@ export default function RoadmapPage() {
                                     </div>
                                     <div className="relative h-24 mb-4 rounded-lg overflow-hidden border border-white/5">
                                         <img
-                                            src={`https://images.unsplash.com/photo-${i === 0 ? '1505373877841-8d25f7d46678' : i === 1 ? '1540575861501-7ce058a877c3' : i === 2 ? '1517245386807-bb43f82c33c4' : i === 3 ? '1551818255-e6e10975bc17' : i === 4 ? '1526304640581-d334cdbbf45e' : '1504384308090-c894fdcc538d'}?auto=format&fit=crop&q=80&w=600`}
+                                            src={`https://images.unsplash.com/photo-${i === 0 ? '1505373877841-8d25f7d46678' : i === 1 ? '1523580494863-6f3031224c94' : i === 2 ? '1517245386807-bb43f82c33c4' : i === 3 ? '1551818255-e6e10975bc17' : i === 4 ? '1526304640581-d334cdbbf45e' : '1504384308090-c894fdcc538d'}?auto=format&fit=crop&q=80&w=600`}
                                             className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
                                             alt={cal.event}
                                         />
@@ -348,8 +348,10 @@ export default function RoadmapPage() {
                             <p className="text-xl text-slate-400 font-light italic">
                                 "To position Aionion Capital as the most trusted Tamil investment brand globally."
                             </p>
-                            <div className="flex justify-center gap-8 mt-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
-                                <img src={coronaLogo} className="h-12 w-auto" alt="Logo" />
+                            <div className="flex justify-center gap-8 mt-12 hover:opacity-100 transition-all duration-700">
+                                <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">
+                                    <img src={coronaLogo} className="h-12 w-auto" alt="Logo" />
+                                </div>
                                 <div className="h-12 w-px bg-white/20" />
                                 <div className="flex items-center gap-2 font-black text-2xl tracking-tighter text-white">
                                     AIONION <span className="text-amber-500">CAPITAL</span>
