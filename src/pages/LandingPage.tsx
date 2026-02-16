@@ -125,13 +125,13 @@ const LandingPage = () => {
                             <Link
                                 key={index}
                                 to={feature.link}
-                                className={`group relative p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} border border-white/5 transition-all duration-500 hover:border-white/20 hover:scale-[1.02] hover:shadow-2xl`}
+                                className={`group relative p-8 rounded-2xl bg-slate-900/40 backdrop-blur-sm bg-gradient-to-br ${feature.gradient} border border-white/5 transition-all duration-500 hover:border-white/20 hover:scale-[1.02] hover:shadow-2xl`}
                             >
                                 <feature.icon className="h-10 w-10 mb-6 text-white/80 group-hover:text-white transition-colors" />
-                                <h3 className="text-xl font-semibold mb-2 text-white">
+                                <h3 className="text-xl font-semibold mb-2 text-white leading-tight">
                                     {feature.title}
                                 </h3>
-                                <p className="text-gray-500 text-sm leading-relaxed">
+                                <p className="text-slate-400 text-sm leading-relaxed">
                                     {feature.description}
                                 </p>
                                 <ArrowRight className="absolute bottom-8 right-8 h-5 w-5 text-white/30 transition-all group-hover:text-white/80 group-hover:translate-x-1" />

@@ -76,10 +76,10 @@ export default function RoadmapPage() {
                                     { title: "Global Tamils", desc: "Expanding into UAE, Singapore, US, and EU", icon: Globe },
                                     { title: "HNI Premium", desc: "Exclusive roundtable for high-value prospects", icon: Star },
                                 ].map((item, i) => (
-                                    <div key={i} className="group p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all">
+                                    <div key={i} className="group p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] transition-all duration-300">
                                         <item.icon className="h-8 w-8 text-amber-500 mb-3" />
-                                        <h3 className="text-white font-bold mb-1">{item.title}</h3>
-                                        <p className="text-slate-400 text-sm">{item.desc}</p>
+                                        <h4 className="text-white font-bold mb-1">{item.title}</h4>
+                                        <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
                                     </div>
                                 ))}
                             </div>
@@ -127,18 +127,18 @@ export default function RoadmapPage() {
                             <div className="h-px flex-1 bg-white/10" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
+                            <Card className="bg-slate-900/60 backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
                                 <CardHeader>
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-blue-500/20 rounded-lg">
                                             <Users className="h-6 w-6 text-blue-400" />
                                         </div>
-                                        <CardTitle className="text-white">Aionion Capital Connect</CardTitle>
+                                        <CardTitle className="text-white text-xl">Aionion Capital Connect</CardTitle>
                                     </div>
-                                    <CardDescription>Existing Clients | Trust | Retention | Referrals</CardDescription>
+                                    <CardDescription className="text-slate-400">Existing Clients | Trust | Retention | Referrals</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <ul className="space-y-3 text-slate-400 text-sm">
+                                    <ul className="space-y-3 text-slate-300 text-sm">
                                         <li className="flex items-center gap-2">
                                             <ArrowUpRight className="h-4 w-4 text-blue-500" />
                                             Increase client retention by 15%
@@ -151,18 +151,18 @@ export default function RoadmapPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+                            <Card className="bg-slate-900/60 backdrop-blur-xl bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20 hover:border-amber-500/40 transition-all duration-300">
                                 <CardHeader>
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-amber-500/20 rounded-lg">
                                             <TrendingUp className="h-6 w-6 text-amber-500" />
                                         </div>
-                                        <CardTitle className="text-white">Money Pechu Fans Meet</CardTitle>
+                                        <CardTitle className="text-white text-xl">Money Pechu Fans Meet</CardTitle>
                                     </div>
-                                    <CardDescription>New Acquisition | Lead Generation | Community</CardDescription>
+                                    <CardDescription className="text-slate-400">New Acquisition | Lead Generation | Community</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <ul className="space-y-3 text-slate-400 text-sm">
+                                    <ul className="space-y-3 text-slate-300 text-sm">
                                         <li className="flex items-center gap-2">
                                             <ArrowUpRight className="h-4 w-4 text-amber-500" />
                                             6,000+ leads target for 2026
@@ -275,19 +275,19 @@ export default function RoadmapPage() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {CALENDAR_H1_2026.map((cal, i) => (
-                                <div key={i} className="relative group p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-amber-500/30 transition-all overflow-hidden">
+                                <div key={i} className="relative group p-6 rounded-2xl bg-slate-900/40 backdrop-blur-sm border border-white/10 hover:border-amber-500/30 transition-all duration-500 overflow-hidden">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
                                         <Calendar className="h-12 w-12 text-white" />
                                     </div>
                                     <div className="flex items-center gap-2 mb-4">
                                         <Badge variant="secondary" className="bg-amber-500 text-black font-black px-2 py-0">{cal.month}</Badge>
-                                        <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">{cal.status}</span>
+                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{cal.status}</span>
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-1">{cal.event}</h3>
+                                    <h3 className="text-xl font-bold text-white mb-1 leading-tight">{cal.event}</h3>
                                     <p className="text-slate-400 text-sm mb-4">{cal.audience}</p>
                                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                        <span className="text-xs text-slate-500">Target</span>
-                                        <span className="text-sm font-bold text-amber-500">{cal.target}</span>
+                                        <span className="text-[10px] uppercase font-bold text-slate-500">Target</span>
+                                        <span className="text-sm font-bold text-amber-500 tracking-tight">{cal.target}</span>
                                     </div>
                                 </div>
                             ))}
