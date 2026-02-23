@@ -9,7 +9,6 @@ import Index from "./pages/Index";
 import EventsPage from "./pages/EventsPage";
 import SOPPage from "./pages/SOPPage";
 import CoronaSOPPage from "./pages/CoronaSOPPage";
-import TasksPage from "./pages/TasksPage";
 import RoadmapPage from "./pages/RoadmapPage";
 import FeedbackFormPage from "./pages/FeedbackFormPage";
 import NotFound from "./pages/NotFound";
@@ -30,7 +29,6 @@ const AppContent = () => {
         <Route path="/events" element={<EventsPage />} />
         <Route path="/sop" element={<SOPPage />} />
         <Route path="/corona-sop" element={<CoronaSOPPage />} />
-        <Route path="/tasks" element={<TasksPage />} />
         <Route path="/roadmap" element={<RoadmapPage />} />
         <Route path="/feedback-form" element={<FeedbackFormPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
