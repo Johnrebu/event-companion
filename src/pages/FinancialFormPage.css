@@ -1,0 +1,50 @@
+.financial-form-page {
+  min-height: calc(100vh - 4rem);
+  padding: 24px 16px;
+  background: hsl(var(--background));
+}
+
+.financial-form-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  background: hsl(var(--card));
+}
+
+.financial-form-container h1 {
+  text-align: center;
+}
+
+.financial-form-container h2 {
+  margin-top: 30px;
+  color: hsl(var(--foreground));
+}
+
+.financial-form-container input,
+.financial-form-container textarea,
+.financial-form-container select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--background));
+}
+
+.financial-form-container button {
+  width: 100%;
+  padding: 12px;
+  background: #0077ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.financial-form-container button:hover {
+  background: #005ed1;
+}
