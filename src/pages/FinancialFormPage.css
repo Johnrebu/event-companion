@@ -15,6 +15,13 @@
 
 .financial-form-container h1 {
   text-align: center;
+  margin-bottom: 8px;
+}
+
+.financial-form-container .form-subtitle {
+  text-align: center;
+  margin: 0 0 20px 0;
+  color: hsl(var(--muted-foreground));
 }
 
 .financial-form-container h2 {
