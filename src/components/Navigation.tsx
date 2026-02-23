@@ -30,7 +30,7 @@ const navItems = [
     { path: "/corona-sop", label: "Event SOP", icon: Zap },
     { path: "/tasks", label: "Task Board", icon: LayoutList },
     { path: "/roadmap", label: "Roadmap", icon: TrendingUp },
-    { path: "/financial-form", label: "Financial Form", icon: HandCoins },
+    { path: "/feedback-form", label: "Feedback Form", icon: HandCoins },
 ];
 
 export function Navigation() {

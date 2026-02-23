@@ -1,9 +1,9 @@
 import { useState } from "react";
-import "./FinancialFormPage.css";
+import "./FeedbackFormPage.css";
 
 type FormState = Record<string, string>;
 
-export default function FinancialFormPage() {
+export default function FeedbackFormPage() {
   const [form, setForm] = useState<FormState>({});
 
   const handleChange = (

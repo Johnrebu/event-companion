@@ -11,7 +11,7 @@ import SOPPage from "./pages/SOPPage";
 import CoronaSOPPage from "./pages/CoronaSOPPage";
 import TasksPage from "./pages/TasksPage";
 import RoadmapPage from "./pages/RoadmapPage";
-import FinancialFormPage from "./pages/FinancialFormPage";
+import FeedbackFormPage from "./pages/FeedbackFormPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +32,7 @@ const AppContent = () => {
         <Route path="/corona-sop" element={<CoronaSOPPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/roadmap" element={<RoadmapPage />} />
-        <Route path="/financial-form" element={<FinancialFormPage />} />
+        <Route path="/feedback-form" element={<FeedbackFormPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
