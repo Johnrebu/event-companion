@@ -3,6 +3,194 @@ import "./FeedbackFormPage.css";
 
 type FormState = Record<string, string>;
 
+const FIELD_LABELS: Record<string, string> = {
+  fullName: "Full Name",
+  age: "Age",
+  profession: "Profession",
+  mobile: "Mobile Number",
+  income: "Monthly Income (approx)",
+  alignedGoals: "Investments aligned with goals",
+  topGoals: "Top 3 Financial Goals",
+  retirementAge: "Expected Retirement Age",
+  retirementIncome: "Expected Retirement Income (monthly)",
+  childrenFundsSecured: "Children education/marriage funds secured",
+  child1EducationAmount: "Child 1 Education Amount",
+  child1EducationYears: "Child 1 Education in Years",
+  child1MarriageAmount: "Child 1 Marriage Amount",
+  child1MarriageYears: "Child 1 Marriage in Years",
+  child2EducationAmount: "Child 2 Education Amount",
+  child2EducationYears: "Child 2 Education in Years",
+  child2MarriageAmount: "Child 2 Marriage Amount",
+  child2MarriageYears: "Child 2 Marriage in Years",
+  child3EducationAmount: "Child 3 Education Amount",
+  child3EducationYears: "Child 3 Education in Years",
+  child3MarriageAmount: "Child 3 Marriage Amount",
+  child3MarriageYears: "Child 3 Marriage in Years",
+  mutualFunds: "Mutual Funds",
+  stocks: "Direct Equity",
+  bonds: "Bonds / Debt",
+  fd: "Fixed Deposits",
+  gold: "Physical Gold (grams)",
+  savings: "Savings Balance",
+  goldStoredAt: "Gold Stored At",
+  purposeOfAttending: "Purpose of Attending",
+  anythingElse: "Anything Else",
+  healthInsurance: "Health Insurance",
+  healthInsuranceCompany: "Health Insurance Company",
+  healthInsurancePolicyType: "Health Policy Type",
+  healthInsuranceExpiry: "Health Policy Expiry",
+  healthInsuranceFromMoneyPechu: "Health Policy from Money Pechu",
+  familyHealthInsuranceApartFromCompany: "Family Health Insurance (apart from company)",
+  familyMember1Name: "Family Member Name",
+  familyMember1Dob: "Family Member DOB",
+  familyMember1Relationship: "Family Member Relationship",
+  familyMember1Pincode: "Family Member Pincode",
+  termInsurance: "Term Insurance",
+  termInsuranceFromMoneyPechu: "Term Policy from Money Pechu",
+  groupInsurance: "Group Medical Insurance",
+  companyName: "Company Name",
+  companyLocation: "Company Location",
+  groupCoverage: "Group Coverage",
+  vehicleType: "Vehicle Type",
+  vehicleNumber: "Vehicle Number",
+  vehicleModel: "Vehicle Model",
+  policyExpiry: "Vehicle Policy Expiry",
+  callDate: "Preferred Call Date",
+  timeSlot: "Preferred Time Slot",
+  refName: "Referral Name",
+  refMobile: "Referral Contact Number",
+  refRelation: "Referral Relationship",
+  refLocation: "Referral Location",
+};
+
+const FORM_ORDER = Object.keys(FIELD_LABELS);
+
+const escapePdfText = (input: string) =>
+  input
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/[^\x20-\x7E]/g, "?");
+
+const wrapText = (text: string, maxChars = 92) => {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.length ? lines : [""];
+};
+
+const createPdfBlob = (lines: string[]) => {
+  const pageHeight = 842;
+  const marginTop = 800;
+  const lineHeight = 14;
+  const maxLinesPerPage = Math.floor((pageHeight - 80) / lineHeight);
+  const pages: string[][] = [];
+  let currentPage: string[] = [];
+
+  for (const line of lines) {
+    const wrapped = wrapText(line);
+    for (const wrappedLine of wrapped) {
+      if (currentPage.length >= maxLinesPerPage) {
+        pages.push(currentPage);
+        currentPage = [];
+      }
+      currentPage.push(wrappedLine);
+    }
+  }
+  if (currentPage.length > 0) pages.push(currentPage);
+
+  const objects: Record<number, string> = {};
+  const fontObjectNumber = 3;
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[fontObjectNumber] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+
+  const kids: string[] = [];
+  pages.forEach((pageLines, index) => {
+    const pageObjectNumber = 4 + index * 2;
+    const contentObjectNumber = pageObjectNumber + 1;
+
+    const content = [
+      "BT",
+      "/F1 10 Tf",
+      `${lineHeight} TL`,
+      `40 ${marginTop} Td`,
+      ...pageLines.map((line, i) => `${i === 0 ? "" : "T* " }(${escapePdfText(line)}) Tj`),
+      "ET",
+    ].join("\n");
+
+    objects[contentObjectNumber] =
+      `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+    objects[pageObjectNumber] =
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObjectNumber} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`;
+    kids.push(`${pageObjectNumber} 0 R`);
+  });
+
+  objects[2] = `<< /Type /Pages /Count ${kids.length} /Kids [${kids.join(" ")}] >>`;
+
+  const maxObjectNumber = Math.max(...Object.keys(objects).map(Number));
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = Array(maxObjectNumber + 1).fill(0);
+
+  for (let i = 1; i <= maxObjectNumber; i += 1) {
+    offsets[i] = pdf.length;
+    pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${maxObjectNumber + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+
+  for (let i = 1; i <= maxObjectNumber; i += 1) {
+    pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+  }
+
+  pdf += `trailer\n<< /Size ${maxObjectNumber + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+};
+
+const downloadFeedbackPdf = (submittedForm: FormState) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const lines: string[] = [
+    "MONEY PECHU - Feedback Form Submission",
+    `Generated On: ${new Date().toLocaleString()}`,
+    "",
+  ];
+
+  for (const key of FORM_ORDER) {
+    const value = submittedForm[key] ?? "";
+    lines.push(`${FIELD_LABELS[key]}: ${value || "-"}`);
+  }
+
+  const extraKeys = Object.keys(submittedForm).filter((key) => !FIELD_LABELS[key]);
+  if (extraKeys.length > 0) {
+    lines.push("", "Additional Fields:");
+    for (const key of extraKeys) {
+      lines.push(`${key}: ${submittedForm[key]}`);
+    }
+  }
+
+  const blob = createPdfBlob(lines);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `feedback-form-${today}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
 export default function FeedbackFormPage() {
   const [form, setForm] = useState<FormState>({});
 
@@ -15,8 +203,17 @@ export default function FeedbackFormPage() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(form);
-    alert("Form submitted successfully!");
+    const formData = new FormData(e.currentTarget);
+    const submittedForm: FormState = {};
+
+    formData.forEach((value, key) => {
+      submittedForm[key] = String(value).trim();
+    });
+
+    setForm(submittedForm);
+    console.log(submittedForm);
+    downloadFeedbackPdf(submittedForm);
+    alert("Form submitted successfully! PDF downloaded.");
     // Send to backend / CRM API here
   };
 
