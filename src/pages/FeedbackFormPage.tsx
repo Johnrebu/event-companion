@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./FeedbackFormPage.css";
 
 type FormState = Record<string, string>;
+const WHATSAPP_NUMBER = "919150043968";
 
 const FIELD_LABELS: Record<string, string> = {
   fullName: "Full Name",
@@ -159,8 +160,9 @@ const createPdfBlob = (lines: string[]) => {
   return new Blob([pdf], { type: "application/pdf" });
 };
 
-const downloadFeedbackPdf = (submittedForm: FormState) => {
+const buildFeedbackPdf = (submittedForm: FormState) => {
   const today = new Date().toISOString().slice(0, 10);
+  const fileName = `feedback-form-${today}.pdf`;
   const lines: string[] = [
     "MONEY PECHU - Feedback Form Submission",
     `Generated On: ${new Date().toLocaleString()}`,
@@ -181,14 +183,43 @@ const downloadFeedbackPdf = (submittedForm: FormState) => {
   }
 
   const blob = createPdfBlob(lines);
+  return { blob, fileName };
+};
+
+const downloadFeedbackPdf = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `feedback-form-${today}.pdf`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+};
+
+const openWhatsAppChat = (fileName: string) => {
+  const text = encodeURIComponent(
+    `New feedback form submitted. File: ${fileName}. Please attach/send the downloaded PDF.`,
+  );
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, "_blank", "noopener,noreferrer");
+};
+
+const tryNativeShare = async (blob: Blob, fileName: string) => {
+  if (!navigator.share || !navigator.canShare) return false;
+
+  const file = new File([blob], fileName, { type: "application/pdf" });
+  if (!navigator.canShare({ files: [file] })) return false;
+
+  try {
+    await navigator.share({
+      title: "Feedback Form PDF",
+      text: "Sharing submitted feedback form PDF",
+      files: [file],
+    });
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export default function FeedbackFormPage() {
@@ -201,7 +232,7 @@ export default function FeedbackFormPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const submittedForm: FormState = {};
@@ -212,8 +243,11 @@ export default function FeedbackFormPage() {
 
     setForm(submittedForm);
     console.log(submittedForm);
-    downloadFeedbackPdf(submittedForm);
-    alert("Form submitted successfully! PDF downloaded.");
+    const { blob, fileName } = buildFeedbackPdf(submittedForm);
+    downloadFeedbackPdf(blob, fileName);
+    await tryNativeShare(blob, fileName);
+    openWhatsAppChat(fileName);
+    alert("Form submitted. PDF downloaded and WhatsApp chat opened.");
     // Send to backend / CRM API here
   };
 
