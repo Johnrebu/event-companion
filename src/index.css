@@ -153,6 +153,38 @@ All colors MUST be HSL.
   }
 }
 
+@layer base {
+  img {
+    animation: iragu-auto-move 12s linear infinite;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  img.no-auto-move {
+    animation: none !important;
+  }
+}
+
+@keyframes iragu-auto-move {
+  0% {
+    transform: translateX(-10px) translateY(0);
+  }
+
+  50% {
+    transform: translateX(10px) translateY(-2px);
+  }
+
+  100% {
+    transform: translateX(-10px) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  img {
+    animation: none !important;
+  }
+}
+
 /* Print Styles */
 @media print {
   body {
