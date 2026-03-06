@@ -161,7 +161,7 @@ export function useExpenseReports() {
 
             const { error: updateItemsError } = await supabase
                 .from('expense_reports')
-                .update({ items: updatedItems })
+                .update({ items: updatedItems as unknown as Json[] })
                 .eq('id', reportId);
 
             if (updateItemsError) throw updateItemsError;
