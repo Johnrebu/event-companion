@@ -2,8 +2,35 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const normalizeSupabaseUrl = (rawUrl?: string, projectId?: string) => {
+  const cleaned = (rawUrl || '').trim().replace(/^['"]|['"]$/g, '');
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+    return cleaned;
+  }
+  if (cleaned) {
+    return `https://${cleaned.replace(/^https?:\/\//, '')}`;
+  }
+  if (projectId) {
+    return `https://${projectId}.supabase.co`;
+  }
+  return 'https://placeholder.supabase.co';
+};
+
+const SUPABASE_URL = normalizeSupabaseUrl(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PROJECT_ID
+);
+const SUPABASE_PUBLISHABLE_KEY =
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '').trim().replace(/^['"]|['"]$/g, '') ||
+  (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim().replace(/^['"]|['"]$/g, '') ||
+  'placeholder';
+
+export const SUPABASE_RUNTIME_INFO = {
+  url: SUPABASE_URL,
+  hasProjectId: Boolean(import.meta.env.VITE_SUPABASE_PROJECT_ID),
+  hasPublishableKey: Boolean(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
+  hasAnonKey: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY),
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

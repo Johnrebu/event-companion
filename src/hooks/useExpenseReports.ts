@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_RUNTIME_INFO } from '@/integrations/supabase/client';
 import { ExpenseItem, EventDetails } from '@/types/expense';
+import type { Json } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 const STORAGE_BUCKET = 'documents';
@@ -9,6 +10,26 @@ const sanitizeFileName = (name: string) => name.replace(/[^a-zA-Z0-9._-]/g, '_')
 
 const createStoragePath = (reportId: string, itemId: string, fileName: string) =>
     `expense-reports/${reportId}/${itemId}-${Date.now()}-${sanitizeFileName(fileName)}`;
+
+type StoredExpenseItem = Omit<ExpenseItem, 'billAttached'> & {
+    billAttached: null;
+};
+
+const formatSupabaseError = (err: unknown, fallback: string) => {
+    const baseMessage = err instanceof Error ? err.message : fallback;
+    const normalized = baseMessage.toLowerCase();
+    const isConnectivityIssue =
+        normalized.includes('failed to fetch') ||
+        normalized.includes('err_name_not_resolved') ||
+        normalized.includes('networkerror') ||
+        normalized.includes('network request failed');
+
+    if (!isConnectivityIssue) {
+        return baseMessage;
+    }
+
+    return `${fallback}. Cannot reach Supabase at ${SUPABASE_RUNTIME_INFO.url}. Check VITE_SUPABASE_URL / VITE_SUPABASE_PROJECT_ID in deployment env vars.`;
+};
 
 export interface SavedExpenseReport {
     id: string;
@@ -50,7 +71,7 @@ export function useExpenseReports() {
             setReports(parsedReports);
             return parsedReports;
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to fetch reports';
+            const message = formatSupabaseError(err, 'Failed to fetch reports');
             setError(message);
             toast.error(message);
             return [];
@@ -72,7 +93,7 @@ export function useExpenseReports() {
             const totalExpenses = items.reduce((sum, item) => sum + item.expenses, 0);
 
             // Insert report first to get a stable ID for storage paths.
-            const baseItems = items.map(item => ({
+            const baseItems: StoredExpenseItem[] = items.map(item => ({
                 ...item,
                 billAttached: null
             }));
@@ -84,7 +105,7 @@ export function useExpenseReports() {
                     event_date: eventDetails.date,
                     venue: eventDetails.venue || null,
                     phone: eventDetails.phone || null,
-                    items: baseItems,
+                    items: baseItems as unknown as Json,
                     gst_percentage: gstPercentage,
                     total_income: totalIncome,
                     total_expenses: totalExpenses
@@ -105,10 +126,10 @@ export function useExpenseReports() {
                 storage_path: string;
             }> = [];
 
-            const updatedItems: ExpenseItem[] = [];
+            const updatedItems: StoredExpenseItem[] = [];
 
             for (const item of items) {
-                let nextItem: ExpenseItem = {
+                let nextItem: StoredExpenseItem = {
                     ...item,
                     billAttached: null,
                 };
@@ -161,7 +182,7 @@ export function useExpenseReports() {
 
             const { error: updateItemsError } = await supabase
                 .from('expense_reports')
-                .update({ items: updatedItems })
+                .update({ items: updatedItems as unknown as Json })
                 .eq('id', reportId);
 
             if (updateItemsError) throw updateItemsError;
@@ -170,7 +191,7 @@ export function useExpenseReports() {
             await fetchReports(); // Refresh list
             return data;
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to save report';
+            const message = formatSupabaseError(err, 'Failed to save report');
             setError(message);
             toast.error(message);
             return null;
@@ -196,7 +217,7 @@ export function useExpenseReports() {
                 items: data.items as unknown as ExpenseItem[]
             } as SavedExpenseReport;
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to fetch report';
+            const message = formatSupabaseError(err, 'Failed to fetch report');
             toast.error(message);
             return null;
         } finally {
@@ -259,7 +280,7 @@ export function useExpenseReports() {
             await fetchReports(); // Refresh list
             return true;
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to delete report';
+            const message = formatSupabaseError(err, 'Failed to delete report');
             toast.error(message);
             return false;
         } finally {
