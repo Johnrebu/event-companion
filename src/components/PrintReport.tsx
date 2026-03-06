@@ -84,7 +84,7 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
                 <th className="border border-gray-300 px-3 py-2 text-left">Particulars</th>
                 <th className="border border-gray-300 px-3 py-2 text-right w-28">Income</th>
                 <th className="border border-gray-300 px-3 py-2 text-right w-28">Expenses</th>
-                <th className="border border-gray-300 px-3 py-2 text-center w-20">Bills</th>
+                <th className="border border-gray-300 px-3 py-2 text-left w-44">Bills</th>
                 <th className="border border-gray-300 px-3 py-2 text-left">Remarks</th>
               </tr>
             </thead>
@@ -99,9 +99,7 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
                   <td className="border border-gray-300 px-3 py-2 text-right text-red-700 font-medium">
                     {item.expenses > 0 ? formatCurrency(item.expenses) : "-"}
                   </td>
-                  <td className="border border-gray-300 px-3 py-2 text-center">
-                    {item.billFileName ? "✓" : "-"}
-                  </td>
+                  <td className="border border-gray-300 px-3 py-2">{item.billFileName || "-"}</td>
                   <td className="border border-gray-300 px-3 py-2 text-gray-600">{item.remarks || "-"}</td>
                 </tr>
               ))}

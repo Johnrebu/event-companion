@@ -3,6 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { ExpenseItem, EventDetails } from '@/types/expense';
 import { toast } from 'sonner';
 
+const STORAGE_BUCKET = 'documents';
+
+const sanitizeFileName = (name: string) => name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+const createStoragePath = (reportId: string, itemId: string, fileName: string) =>
+    `expense-reports/${reportId}/${itemId}-${Date.now()}-${sanitizeFileName(fileName)}`;
+
 export interface SavedExpenseReport {
     id: string;
     event_name: string;
@@ -64,8 +71,8 @@ export function useExpenseReports() {
             const totalIncome = items.reduce((sum, item) => sum + item.income, 0);
             const totalExpenses = items.reduce((sum, item) => sum + item.expenses, 0);
 
-            // Clean items for storage (remove File objects)
-            const cleanItems = items.map(item => ({
+            // Insert report first to get a stable ID for storage paths.
+            const baseItems = items.map(item => ({
                 ...item,
                 billAttached: null
             }));
@@ -77,7 +84,7 @@ export function useExpenseReports() {
                     event_date: eventDetails.date,
                     venue: eventDetails.venue || null,
                     phone: eventDetails.phone || null,
-                    items: cleanItems,
+                    items: baseItems,
                     gst_percentage: gstPercentage,
                     total_income: totalIncome,
                     total_expenses: totalExpenses
@@ -86,6 +93,78 @@ export function useExpenseReports() {
                 .single();
 
             if (insertError) throw insertError;
+
+            const reportId = data.id;
+            const uploadedDocs: Array<{
+                event_id: string;
+                event_name: string;
+                file_name: string;
+                file_size: number;
+                file_type: string;
+                file_url: string;
+                storage_path: string;
+            }> = [];
+
+            const updatedItems: ExpenseItem[] = [];
+
+            for (const item of items) {
+                let nextItem: ExpenseItem = {
+                    ...item,
+                    billAttached: null,
+                };
+
+                if (item.billAttached) {
+                    const storagePath = createStoragePath(reportId, item.id, item.billAttached.name);
+                    const { error: uploadError } = await supabase.storage
+                        .from(STORAGE_BUCKET)
+                        .upload(storagePath, item.billAttached, {
+                            contentType: item.billAttached.type || undefined,
+                        });
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from(STORAGE_BUCKET)
+                        .getPublicUrl(storagePath);
+
+                    nextItem = {
+                        ...nextItem,
+                        billFileName: item.billAttached.name,
+                        billStoragePath: storagePath,
+                        billUrl: publicUrlData.publicUrl,
+                    };
+
+                    uploadedDocs.push({
+                        event_id: reportId,
+                        event_name: eventDetails.eventName || 'Untitled Event',
+                        file_name: item.billAttached.name,
+                        file_size: item.billAttached.size,
+                        file_type: item.billAttached.type,
+                        file_url: publicUrlData.publicUrl,
+                        storage_path: storagePath,
+                    });
+                }
+
+                updatedItems.push(nextItem);
+            }
+
+            if (uploadedDocs.length > 0) {
+                const { error: docsInsertError } = await supabase
+                    .from('documents')
+                    .insert(uploadedDocs);
+
+                if (docsInsertError) {
+                    // Keep report save successful even if document metadata insert fails.
+                    console.error('Document metadata insert failed:', docsInsertError);
+                }
+            }
+
+            const { error: updateItemsError } = await supabase
+                .from('expense_reports')
+                .update({ items: updatedItems })
+                .eq('id', reportId);
+
+            if (updateItemsError) throw updateItemsError;
 
             toast.success('Report saved to database!');
             await fetchReports(); // Refresh list
@@ -129,6 +208,46 @@ export function useExpenseReports() {
     const deleteReport = useCallback(async (id: string) => {
         setLoading(true);
         try {
+            const { data: reportData } = await supabase
+                .from('expense_reports')
+                .select('items')
+                .eq('id', id)
+                .single();
+
+            const { data: documentRows } = await supabase
+                .from('documents')
+                .select('storage_path')
+                .eq('event_id', id);
+
+            const pathsFromItems = ((reportData?.items as unknown as ExpenseItem[] | undefined) || [])
+                .map(item => item.billStoragePath)
+                .filter((path): path is string => Boolean(path));
+
+            const pathsFromDocuments = (documentRows || [])
+                .map(doc => doc.storage_path)
+                .filter((path): path is string => Boolean(path));
+
+            const uniquePaths = [...new Set([...pathsFromItems, ...pathsFromDocuments])];
+
+            if (uniquePaths.length > 0) {
+                const { error: removeStorageError } = await supabase.storage
+                    .from(STORAGE_BUCKET)
+                    .remove(uniquePaths);
+
+                if (removeStorageError) {
+                    console.error('Storage cleanup failed:', removeStorageError);
+                }
+            }
+
+            const { error: docsDeleteError } = await supabase
+                .from('documents')
+                .delete()
+                .eq('event_id', id);
+
+            if (docsDeleteError) {
+                console.error('Document metadata cleanup failed:', docsDeleteError);
+            }
+
             const { error: deleteError } = await supabase
                 .from('expense_reports')
                 .delete()

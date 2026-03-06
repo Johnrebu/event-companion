@@ -1,7 +1,7 @@
 import { ExpenseItem } from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Paperclip, X, FileText, Trash2 } from "lucide-react";
+import { Paperclip, X, FileText, Trash2, ExternalLink } from "lucide-react";
 import { useRef } from "react";
 
 interface ExpenseRowProps {
@@ -24,6 +24,8 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
         ...item,
         billAttached: file,
         billFileName: file.name,
+        billUrl: undefined,
+        billStoragePath: undefined,
       });
     }
   };
@@ -33,6 +35,8 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
       ...item,
       billAttached: null,
       billFileName: "",
+      billUrl: undefined,
+      billStoragePath: undefined,
     });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -89,6 +93,17 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
               <span className="max-w-[100px] truncate text-accent-foreground">
                 {item.billFileName}
               </span>
+              {item.billUrl && (
+                <a
+                  href={item.billUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:text-primary/80 transition-colors"
+                  title="Open uploaded file"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
               <button
                 onClick={handleRemoveFile}
                 className="text-muted-foreground hover:text-destructive transition-colors"

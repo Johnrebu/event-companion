@@ -7,6 +7,8 @@ export interface ExpenseItem {
   remarks: string;
   billAttached: File | null;
   billFileName: string;
+  billUrl?: string;
+  billStoragePath?: string;
 }
 
 export interface EventDetails {

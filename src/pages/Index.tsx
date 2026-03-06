@@ -22,6 +22,14 @@ import { format } from "date-fns";
 
 const STORAGE_KEY = "expense-report";
 
+const escapeCsvCell = (value: string | number) => {
+  const text = String(value ?? "");
+  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+};
+
 const createEmptyItem = (sNo: number): ExpenseItem => ({
   id: crypto.randomUUID(),
   sNo,
@@ -31,6 +39,8 @@ const createEmptyItem = (sNo: number): ExpenseItem => ({
   remarks: "",
   billAttached: null,
   billFileName: "",
+  billUrl: undefined,
+  billStoragePath: undefined,
 });
 
 const loadSavedData = () => {
@@ -48,6 +58,7 @@ const loadSavedData = () => {
         items: data.items?.length > 0 ? data.items.map((item: ExpenseItem) => ({
           ...item,
           billAttached: null, // File objects can't be stored in localStorage
+          billFileName: item.billFileName || "",
         })) : [createEmptyItem(1), createEmptyItem(2), createEmptyItem(3)],
         gstPercentage: data.gstPercentage ?? 18,
       };
@@ -114,8 +125,9 @@ const Index = () => {
       id: item.id || crypto.randomUUID(),
       sNo: index + 1,
       billAttached: null,
+      billFileName: item.billFileName || "",
     })));
-    setGstPercentage(report.gst_percentage);
+    setGstPercentage(report.gst_percentage ?? 18);
     setIsSavedReportsOpen(false);
     toast.success(`Loaded report: ${report.event_name}`);
   };
@@ -173,7 +185,10 @@ const Index = () => {
   const handleSave = () => {
     const report = {
       eventDetails,
-      items,
+      items: items.map(item => ({
+        ...item,
+        billAttached: null,
+      })),
       gstPercentage,
       savedAt: new Date().toISOString(),
     };
@@ -193,7 +208,7 @@ const Index = () => {
       ["Venue:", eventDetails.venue],
       ["Phone:", eventDetails.phone],
       [],
-      ["S.No", "Particulars", "Income", "Expenses", "Remarks", "Bill Attached"],
+      ["S.No", "Particulars", "Income", "Expenses", "Remarks", "Bill Name", "Bill URL"],
       ...items.map((item) => [
         item.sNo,
         item.particulars,
@@ -201,6 +216,7 @@ const Index = () => {
         item.expenses,
         item.remarks,
         item.billFileName || "No",
+        item.billUrl || "",
       ]),
       [],
       ["", "Total Income:", totalIncome],
@@ -208,7 +224,7 @@ const Index = () => {
       ["", `GST @ ${gstPercentage}%:`, gstAmount],
       ["", "Grand Total:", grandTotal],
     ]
-      .map((row) => row.join(","))
+      .map((row) => row.map((cell) => escapeCsvCell(cell as string | number)).join(","))
       .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -325,7 +341,7 @@ const Index = () => {
                     <th>Particulars</th>
                     <th class="right" style="width: 112px;">Income</th>
                     <th class="right" style="width: 112px;">Expenses</th>
-                    <th class="center" style="width: 80px;">Bills</th>
+                    <th style="width: 220px;">Bills</th>
                     <th>Remarks</th>
                   </tr>
                 </thead>
@@ -336,7 +352,7 @@ const Index = () => {
                       <td>${item.particulars || "-"}</td>
                       <td class="right income">${item.income > 0 ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(item.income) : "-"}</td>
                       <td class="right expense">${item.expenses > 0 ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(item.expenses) : "-"}</td>
-                      <td class="center">${item.billFileName ? "✓" : "-"}</td>
+                      <td>${item.billFileName || "-"}</td>
                       <td>${item.remarks || "-"}</td>
                     </tr>
                   `).join("")}
