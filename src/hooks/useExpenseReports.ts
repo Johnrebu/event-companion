@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { ExpenseItem, EventDetails } from '@/types/expense';
 import { toast } from 'sonner';
 
@@ -161,7 +162,7 @@ export function useExpenseReports() {
 
             const { error: updateItemsError } = await supabase
                 .from('expense_reports')
-                .update({ items: updatedItems })
+                .update({ items: updatedItems as unknown as Json[] })
                 .eq('id', reportId);
 
             if (updateItemsError) throw updateItemsError;
