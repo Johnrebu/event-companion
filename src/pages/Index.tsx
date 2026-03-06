@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { ExpenseItem, EventDetails } from "@/types/expense";
 import EventHeader from "@/components/EventHeader";
 import ExpenseTable from "@/components/ExpenseTable";
@@ -105,6 +105,10 @@ const Index = () => {
     }
   }, [isSavedReportsOpen, fetchReports]);
 
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
   const handleSaveToDatabase = async () => {
     if (!eventDetails.eventName) {
       toast.error("Please enter an event name before saving");
@@ -137,6 +141,70 @@ const Index = () => {
     if (confirm("Are you sure you want to delete this report?")) {
       await deleteReport(id);
     }
+  };
+
+  const renderReportsList = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (reports.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          No saved reports yet. Save a report to see it here.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {reports.map((report) => (
+          <div
+            key={report.id}
+            onClick={() => handleLoadReport(report)}
+            className="p-3 md:p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors group"
+          >
+            <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base md:text-lg truncate">{report.event_name}</h3>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">
+                  {format(new Date(report.event_date), "PPP")}
+                  {report.venue && ` • ${report.venue}`}
+                </p>
+              </div>
+              <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                <div className="text-right text-sm">
+                  <div className="text-emerald-600 font-medium">
+                    Income: INR {(report.total_income ?? 0).toLocaleString("en-IN")}
+                  </div>
+                  <div className="text-red-600">
+                    Expenses: INR {(report.total_expenses ?? 0).toLocaleString("en-IN")}
+                  </div>
+                  <div className={`font-bold mt-1 ${((report.total_income ?? 0) - (report.total_expenses ?? 0)) >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                    Net: INR {((report.total_income ?? 0) - (report.total_expenses ?? 0)).toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => handleDeleteReport(report.id, e)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Saved: {format(new Date(report.created_at || report.event_date), "PPp")}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // Auto-save to localStorage whenever data changes
@@ -466,61 +534,7 @@ const Index = () => {
                 <DialogHeader>
                   <DialogTitle>Saved Expense Reports</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="max-h-[60vh] pr-4">
-                  {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : reports.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No saved reports yet. Save a report to see it here.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {reports.map((report) => (
-                        <div
-                          key={report.id}
-                          onClick={() => handleLoadReport(report)}
-                          className="p-3 md:p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors group"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-2">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-base md:text-lg truncate">{report.event_name}</h3>
-                              <p className="text-xs md:text-sm text-muted-foreground truncate">
-                                {format(new Date(report.event_date), "PPP")}
-                                {report.venue && ` • ${report.venue}`}
-                              </p>
-                            </div>
-                            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-                              <div className="text-right text-sm">
-                                <div className="text-emerald-600 font-medium">
-                                  Income: ₹{report.total_income.toLocaleString("en-IN")}
-                                </div>
-                                <div className="text-red-600">
-                                  Expenses: ₹{report.total_expenses.toLocaleString("en-IN")}
-                                </div>
-                                <div className={`font-bold mt-1 ${(report.total_income - report.total_expenses) >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-                                  Net: ₹{(report.total_income - report.total_expenses).toLocaleString("en-IN")}
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => handleDeleteReport(report.id, e)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Saved: {format(new Date(report.created_at), "PPp")}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
+                <ScrollArea className="max-h-[60vh] pr-4">{renderReportsList()}</ScrollArea>
               </DialogContent>
             </Dialog>
             <Button variant="outline" onClick={handleExport} className="gap-2">
@@ -539,6 +553,17 @@ const Index = () => {
             onItemDelete={handleItemDelete}
             onAddItem={handleAddItem}
           />
+
+          <div className="bg-card rounded-xl shadow-md border border-border overflow-hidden">
+            <div className="bg-secondary px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-secondary-foreground">Saved Expense Reports (DB)</h3>
+              <Button variant="outline" size="sm" onClick={() => fetchReports()} disabled={loading} className="gap-2">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
+            <div className="p-4">{renderReportsList()}</div>
+          </div>
 
           <TotalSummary
             items={items}
@@ -576,3 +601,4 @@ const Index = () => {
 };
 
 export default Index;
+

@@ -38,12 +38,20 @@ export interface SavedExpenseReport {
     venue: string | null;
     phone: string | null;
     items: ExpenseItem[];
-    gst_percentage: number;
-    total_income: number;
-    total_expenses: number;
+    gst_percentage: number | null;
+    total_income: number | null;
+    total_expenses: number | null;
     created_at: string;
     updated_at: string;
 }
+
+const normalizeReport = (report: any): SavedExpenseReport => ({
+    ...report,
+    gst_percentage: report.gst_percentage ?? 18,
+    total_income: report.total_income ?? 0,
+    total_expenses: report.total_expenses ?? 0,
+    items: report.items as unknown as ExpenseItem[],
+});
 
 export function useExpenseReports() {
     const [reports, setReports] = useState<SavedExpenseReport[]>([]);
@@ -63,10 +71,7 @@ export function useExpenseReports() {
             if (fetchError) throw fetchError;
 
             // Parse items from JSONB
-            const parsedReports = (data || []).map(report => ({
-                ...report,
-                items: report.items as unknown as ExpenseItem[]
-            }));
+            const parsedReports = (data || []).map(normalizeReport);
 
             setReports(parsedReports);
             return parsedReports;
@@ -212,10 +217,7 @@ export function useExpenseReports() {
 
             if (fetchError) throw fetchError;
 
-            return {
-                ...data,
-                items: data.items as unknown as ExpenseItem[]
-            } as SavedExpenseReport;
+            return normalizeReport(data);
         } catch (err) {
             const message = formatSupabaseError(err, 'Failed to fetch report');
             toast.error(message);
