@@ -116,8 +116,8 @@ const LandingPage = () => {
                             },
                             {
                                 icon: TrendingUp,
-                                title: "Roadmap",
-                                description: "Strategic vision for 2026-2027",
+                                title: "Vision Board",
+                                description: "Vision board for 2026-2027",
                                 link: "/roadmap",
                                 gradient: "from-red-500/20 to-red-600/5"
                             }

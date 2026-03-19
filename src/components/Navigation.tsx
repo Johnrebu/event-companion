@@ -28,7 +28,7 @@ const navItems = [
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/sop", label: "Pre-Event", icon: ClipboardCheck },
     { path: "/corona-sop", label: "Event SOP", icon: Zap },
-    { path: "/roadmap", label: "Roadmap", icon: TrendingUp },
+    { path: "/roadmap", label: "Vision Board", icon: TrendingUp },
     { path: "/feedback-form", label: "Feedback Form", icon: HandCoins },
 ];
 
