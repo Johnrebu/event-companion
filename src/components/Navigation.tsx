@@ -29,7 +29,7 @@ const navItems = [
     { path: "/sop", label: "Pre-Event", icon: ClipboardCheck },
     { path: "/corona-sop", label: "Event SOP", icon: Zap },
     { path: "/roadmap", label: "Vision Board", icon: TrendingUp },
-    { path: "/feedback-form", label: "Feedback Form", icon: HandCoins },
+    { path: "/reimbursement-form", label: "Reimbursement", icon: HandCoins },
 ];
 
 export function Navigation() {

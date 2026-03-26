@@ -31,6 +31,7 @@ const AppContent = () => {
         <Route path="/corona-sop" element={<CoronaSOPPage />} />
         <Route path="/roadmap" element={<RoadmapPage />} />
         <Route path="/feedback-form" element={<FeedbackFormPage />} />
+        <Route path="/reimbursement-form" element={<FeedbackFormPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

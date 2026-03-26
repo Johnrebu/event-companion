@@ -1,421 +1,1036 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import {
+  AlertCircle,
+  Building2,
+  FileText,
+  Landmark,
+  MapPin,
+  Plus,
+  Printer,
+  RefreshCcw,
+  Trash2,
+  UserRound,
+  Wallet,
+} from "lucide-react";
+import aionionLogo from "@/assets/aionion-logo.png";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import "./FeedbackFormPage.css";
 
-type FormState = Record<string, string>;
-const WHATSAPP_NUMBER = "919150043968";
-
-const FIELD_LABELS: Record<string, string> = {
-  fullName: "Full Name",
-  age: "Age",
-  profession: "Profession",
-  mobile: "Mobile Number",
-  income: "Monthly Income (approx)",
-  alignedGoals: "Investments aligned with goals",
-  topGoals: "Top 3 Financial Goals",
-  retirementAge: "Expected Retirement Age",
-  retirementIncome: "Expected Retirement Income (monthly)",
-  childrenFundsSecured: "Children education/marriage funds secured",
-  child1EducationAmount: "Child 1 Education Amount",
-  child1EducationYears: "Child 1 Education in Years",
-  child1MarriageAmount: "Child 1 Marriage Amount",
-  child1MarriageYears: "Child 1 Marriage in Years",
-  child2EducationAmount: "Child 2 Education Amount",
-  child2EducationYears: "Child 2 Education in Years",
-  child2MarriageAmount: "Child 2 Marriage Amount",
-  child2MarriageYears: "Child 2 Marriage in Years",
-  child3EducationAmount: "Child 3 Education Amount",
-  child3EducationYears: "Child 3 Education in Years",
-  child3MarriageAmount: "Child 3 Marriage Amount",
-  child3MarriageYears: "Child 3 Marriage in Years",
-  mutualFunds: "Mutual Funds",
-  stocks: "Direct Equity",
-  bonds: "Bonds / Debt",
-  fd: "Fixed Deposits",
-  gold: "Physical Gold (grams)",
-  savings: "Savings Balance",
-  goldStoredAt: "Gold Stored At",
-  purposeOfAttending: "Purpose of Attending",
-  anythingElse: "Anything Else",
-  healthInsurance: "Health Insurance",
-  healthInsuranceCompany: "Health Insurance Company",
-  healthInsurancePolicyType: "Health Policy Type",
-  healthInsuranceExpiry: "Health Policy Expiry",
-  healthInsuranceFromMoneyPechu: "Health Policy from Money Pechu",
-  familyHealthInsuranceApartFromCompany: "Family Health Insurance (apart from company)",
-  familyMember1Name: "Family Member Name",
-  familyMember1Dob: "Family Member DOB",
-  familyMember1Relationship: "Family Member Relationship",
-  familyMember1Pincode: "Family Member Pincode",
-  termInsurance: "Term Insurance",
-  termInsuranceFromMoneyPechu: "Term Policy from Money Pechu",
-  groupInsurance: "Group Medical Insurance",
-  companyName: "Company Name",
-  companyLocation: "Company Location",
-  groupCoverage: "Group Coverage",
-  vehicleType: "Vehicle Type",
-  vehicleNumber: "Vehicle Number",
-  vehicleModel: "Vehicle Model",
-  policyExpiry: "Vehicle Policy Expiry",
-  callDate: "Preferred Call Date",
-  timeSlot: "Preferred Time Slot",
-  refName: "Referral Name",
-  refMobile: "Referral Contact Number",
-  refRelation: "Referral Relationship",
-  refLocation: "Referral Location",
+type ReimbursementForm = {
+  claimTitle: string;
+  claimLocation: string;
+  employeeName: string;
+  employeeId: string;
+  bankAccountName: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  declaration: string;
 };
 
-const FORM_ORDER = Object.keys(FIELD_LABELS);
-
-const escapePdfText = (input: string) =>
-  input
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-    .replace(/[^\x20-\x7E]/g, "?");
-
-const wrapText = (text: string, maxChars = 92) => {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars) {
-      current = candidate;
-    } else {
-      if (current) lines.push(current);
-      current = word;
-    }
-  }
-  if (current) lines.push(current);
-  return lines.length ? lines : [""];
+type ReimbursementItem = {
+  id: string;
+  expenseDate: string;
+  description: string;
+  invoiceAmount: string;
+  remarks: string;
+  companyName: string;
 };
 
-const createPdfBlob = (lines: string[]) => {
-  const pageHeight = 842;
-  const marginTop = 800;
-  const lineHeight = 14;
-  const maxLinesPerPage = Math.floor((pageHeight - 80) / lineHeight);
-  const pages: string[][] = [];
-  let currentPage: string[] = [];
-
-  for (const line of lines) {
-    const wrapped = wrapText(line);
-    for (const wrappedLine of wrapped) {
-      if (currentPage.length >= maxLinesPerPage) {
-        pages.push(currentPage);
-        currentPage = [];
-      }
-      currentPage.push(wrappedLine);
-    }
-  }
-  if (currentPage.length > 0) pages.push(currentPage);
-
-  const objects: Record<number, string> = {};
-  const fontObjectNumber = 3;
-  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
-  objects[fontObjectNumber] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
-
-  const kids: string[] = [];
-  pages.forEach((pageLines, index) => {
-    const pageObjectNumber = 4 + index * 2;
-    const contentObjectNumber = pageObjectNumber + 1;
-
-    const content = [
-      "BT",
-      "/F1 10 Tf",
-      `${lineHeight} TL`,
-      `40 ${marginTop} Td`,
-      ...pageLines.map((line, i) => `${i === 0 ? "" : "T* " }(${escapePdfText(line)}) Tj`),
-      "ET",
-    ].join("\n");
-
-    objects[contentObjectNumber] =
-      `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
-    objects[pageObjectNumber] =
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObjectNumber} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`;
-    kids.push(`${pageObjectNumber} 0 R`);
-  });
-
-  objects[2] = `<< /Type /Pages /Count ${kids.length} /Kids [${kids.join(" ")}] >>`;
-
-  const maxObjectNumber = Math.max(...Object.keys(objects).map(Number));
-  let pdf = "%PDF-1.4\n";
-  const offsets: number[] = Array(maxObjectNumber + 1).fill(0);
-
-  for (let i = 1; i <= maxObjectNumber; i += 1) {
-    offsets[i] = pdf.length;
-    pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`;
-  }
-
-  const xrefOffset = pdf.length;
-  pdf += `xref\n0 ${maxObjectNumber + 1}\n`;
-  pdf += "0000000000 65535 f \n";
-
-  for (let i = 1; i <= maxObjectNumber; i += 1) {
-    pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
-  }
-
-  pdf += `trailer\n<< /Size ${maxObjectNumber + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return new Blob([pdf], { type: "application/pdf" });
+type SavedDraft = {
+  form: ReimbursementForm;
+  items: ReimbursementItem[];
 };
 
-const buildFeedbackPdf = (submittedForm: FormState) => {
-  const today = new Date().toISOString().slice(0, 10);
-  const fileName = `feedback-form-${today}.pdf`;
-  const lines: string[] = [
-    "MONEY PECHU - Feedback Form Submission",
-    `Generated On: ${new Date().toLocaleString()}`,
-    "",
-  ];
+const STORAGE_KEY = "aionion-reimbursement-draft";
+const DEFAULT_COMPANY_NAME = "Corona creative solution";
 
-  for (const key of FORM_ORDER) {
-    const value = submittedForm[key] ?? "";
-    lines.push(`${FIELD_LABELS[key]}: ${value || "-"}`);
-  }
+const IMPORTANT_NOTES = [
+  "Attach the respective invoices and CC the reporting head.",
+  "Payments are only made to the employee's own bank account.",
+  "Claims are rejected when the invoice does not match the expense description or date.",
+  "Invoices must be clear, legible, and complete.",
+  "Submit reimbursement claims within the weekly cycle for timely processing.",
+  "Crosscheck the account number before sending the claim.",
+];
 
-  const extraKeys = Object.keys(submittedForm).filter((key) => !FIELD_LABELS[key]);
-  if (extraKeys.length > 0) {
-    lines.push("", "Additional Fields:");
-    for (const key of extraKeys) {
-      lines.push(`${key}: ${submittedForm[key]}`);
-    }
-  }
-
-  const blob = createPdfBlob(lines);
-  return { blob, fileName };
+const DEFAULT_FORM: ReimbursementForm = {
+  claimTitle: "Petty Cash Expenses",
+  claimLocation: "Trichy",
+  employeeName: "T Johnson",
+  employeeId: "ACM0309",
+  bankAccountName: "T Johnson",
+  bankName: "IDFC",
+  accountNumber: "10242735037",
+  ifscCode: "IDFB0081833",
+  declaration:
+    "I confirm that the above expenses were incurred for business purposes and the supporting invoices will be attached for reimbursement review.",
 };
 
-const downloadFeedbackPdf = (blob: Blob, fileName: string) => {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-};
+const createExpenseItem = (overrides: Partial<ReimbursementItem> = {}): ReimbursementItem => ({
+  id: crypto.randomUUID(),
+  expenseDate: "",
+  description: "",
+  invoiceAmount: "",
+  remarks: "",
+  companyName: DEFAULT_COMPANY_NAME,
+  ...overrides,
+});
 
-const openWhatsAppChat = (fileName: string) => {
-  const text = encodeURIComponent(
-    `New feedback form submitted. File: ${fileName}. Please attach/send the downloaded PDF.`,
-  );
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, "_blank", "noopener,noreferrer");
-};
+const DEFAULT_ITEMS: ReimbursementItem[] = [
+  createExpenseItem({
+    expenseDate: "2026-03-20",
+    description: "Chennai to Trichy Train ticket",
+    invoiceAmount: "175",
+    remarks: "Johnson",
+  }),
+  createExpenseItem({
+    expenseDate: "2026-03-23",
+    description: "Water case for Anand sir",
+    invoiceAmount: "100",
+    remarks: "Johnson",
+  }),
+  createExpenseItem({
+    expenseDate: "2026-03-23",
+    description: "PER DAY EXPENSES",
+    invoiceAmount: "500",
+    remarks: "Johnson",
+  }),
+];
 
-const tryNativeShare = async (blob: Blob, fileName: string) => {
-  if (!navigator.share || !navigator.canShare) return false;
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(value);
 
-  const file = new File([blob], fileName, { type: "application/pdf" });
-  if (!navigator.canShare({ files: [file] })) return false;
+const formatDisplayDate = (value: string) => {
+  if (!value) return "-";
 
   try {
-    await navigator.share({
-      title: "Feedback Form PDF",
-      text: "Sharing submitted feedback form PDF",
-      files: [file],
-    });
-    return true;
+    return format(new Date(`${value}T00:00:00`), "dd MMM yyyy");
   } catch {
+    return value;
+  }
+};
+
+const amountFromString = (value: string) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const slugify = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const getInitialDraft = (): SavedDraft => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      return { form: DEFAULT_FORM, items: DEFAULT_ITEMS };
+    }
+
+    const parsed = JSON.parse(saved) as Partial<SavedDraft>;
+    return {
+      form: { ...DEFAULT_FORM, ...(parsed.form ?? {}) },
+      items:
+        parsed.items && parsed.items.length > 0
+          ? parsed.items.map((item) => createExpenseItem(item))
+          : DEFAULT_ITEMS,
+    };
+  } catch {
+    return { form: DEFAULT_FORM, items: DEFAULT_ITEMS };
+  }
+};
+
+const buildReimbursementPrintHtml = (form: ReimbursementForm, items: ReimbursementItem[]) => {
+  const total = items.reduce((sum, item) => sum + amountFromString(item.invoiceAmount), 0);
+  const tableRows = items
+    .map(
+      (item, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(formatDisplayDate(item.expenseDate))}</td>
+          <td>${escapeHtml(item.description || "-")}</td>
+          <td class="amount">${escapeHtml(formatCurrency(amountFromString(item.invoiceAmount)))}</td>
+          <td>${escapeHtml(item.remarks || "-")}</td>
+          <td>${escapeHtml(item.companyName || "-")}</td>
+        </tr>`,
+    )
+    .join("");
+
+  const notesList = IMPORTANT_NOTES.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
+  const generatedOn = escapeHtml(new Date().toLocaleString("en-IN"));
+  const documentTitle = escapeHtml(form.claimTitle || "Petty Cash Reimbursement");
+  const employeeSlug = slugify(form.employeeName) || "employee";
+  const locationSlug = slugify(form.claimLocation) || "claim";
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <title>${documentTitle} - ${employeeSlug}-${locationSlug}</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            padding: 24px;
+            background: #eef2f7;
+            color: #0f172a;
+            font-family: "Segoe UI", Arial, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .sheet {
+            max-width: 840px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #dbe3ef;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: center;
+            padding: 24px 28px;
+            border-bottom: 3px solid #0b5695;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+          }
+          .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+          }
+          .brand img {
+            height: 56px;
+            width: auto;
+          }
+          .eyebrow {
+            margin: 0 0 6px;
+            color: #0b5695;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+          }
+          .title {
+            margin: 0;
+            font-size: 30px;
+            line-height: 1.05;
+            font-weight: 800;
+          }
+          .subtitle {
+            margin: 8px 0 0;
+            color: #475569;
+            font-size: 13px;
+          }
+          .header-meta {
+            min-width: 220px;
+            text-align: right;
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.7;
+          }
+          .header-meta strong {
+            color: #0f172a;
+          }
+          .section {
+            padding: 22px 28px;
+          }
+          .section + .section {
+            border-top: 1px solid #e2e8f0;
+          }
+          .section-title {
+            margin: 0 0 14px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+          .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 14px;
+          }
+          .detail-card {
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: #f8fafc;
+          }
+          .detail-card span {
+            display: block;
+            margin-bottom: 6px;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          .detail-card strong {
+            font-size: 14px;
+            color: #0f172a;
+            word-break: break-word;
+          }
+          .table-shell {
+            overflow: hidden;
+            border: 1px solid #dbe3ef;
+            border-radius: 16px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+          }
+          thead th {
+            padding: 12px 10px;
+            background: #0f172a;
+            color: #ffffff;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          tbody td {
+            padding: 12px 10px;
+            border-top: 1px solid #e2e8f0;
+            vertical-align: top;
+            line-height: 1.5;
+          }
+          tbody tr:nth-child(even) {
+            background: #f8fafc;
+          }
+          .amount {
+            text-align: right;
+            white-space: nowrap;
+            font-weight: 700;
+            color: #991b1b;
+          }
+          .summary-row-wrap {
+            display: flex;
+            justify-content: flex-end;
+          }
+          .summary-card {
+            width: 320px;
+            padding: 18px 20px;
+            border: 1px solid #dbe3ef;
+            border-radius: 16px;
+            background: #f8fafc;
+          }
+          .summary-card h3 {
+            margin: 0 0 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dbe3ef;
+            font-size: 18px;
+          }
+          .summary-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 10px;
+            font-size: 14px;
+          }
+          .summary-line span:first-child {
+            color: #64748b;
+          }
+          .summary-line strong {
+            color: #0f172a;
+          }
+          .summary-line.total {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid #0f172a;
+            font-size: 16px;
+            font-weight: 800;
+          }
+          .notes {
+            margin: 0;
+            padding-left: 20px;
+            color: #475569;
+            line-height: 1.75;
+            font-size: 13px;
+          }
+          .declaration {
+            padding: 14px 16px;
+            border: 1px solid #dbe3ef;
+            border-radius: 14px;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.75;
+            font-size: 14px;
+          }
+          .signatures {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 28px;
+            margin-top: 38px;
+          }
+          .signature {
+            padding-top: 34px;
+            border-top: 1px solid #94a3b8;
+            text-align: center;
+            color: #475569;
+            font-size: 13px;
+          }
+          .footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 18px 28px 24px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.7;
+          }
+          @media print {
+            @page {
+              size: A4;
+              margin: 10mm;
+            }
+            body {
+              padding: 0;
+              background: #ffffff;
+            }
+            .sheet {
+              border: none;
+              box-shadow: none;
+            }
+            thead {
+              display: table-header-group;
+            }
+            tr, .detail-card, .summary-card, .declaration {
+              page-break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="sheet">
+          <section class="header">
+            <div class="brand">
+              <img src="${aionionLogo}" alt="Aionion" />
+              <div>
+                <p class="eyebrow">Expense Bill Format</p>
+                <h1 class="title">${documentTitle}</h1>
+                <p class="subtitle">Petty cash reimbursement statement for events, travel, and local conveyance.</p>
+              </div>
+            </div>
+            <div class="header-meta">
+              <div><strong>Generated On</strong></div>
+              <div>${generatedOn}</div>
+              <div style="margin-top: 10px;"><strong>Location</strong></div>
+              <div>${escapeHtml(form.claimLocation || "-")}</div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Employee and Bank Details</h2>
+            <div class="details-grid">
+              <div class="detail-card"><span>Employee Name</span><strong>${escapeHtml(form.employeeName || "-")}</strong></div>
+              <div class="detail-card"><span>Employee ID</span><strong>${escapeHtml(form.employeeId || "-")}</strong></div>
+              <div class="detail-card"><span>Name as per Bank</span><strong>${escapeHtml(form.bankAccountName || "-")}</strong></div>
+              <div class="detail-card"><span>Bank Name</span><strong>${escapeHtml(form.bankName || "-")}</strong></div>
+              <div class="detail-card"><span>Account Number</span><strong>${escapeHtml(form.accountNumber || "-")}</strong></div>
+              <div class="detail-card"><span>IFSC Code</span><strong>${escapeHtml(form.ifscCode || "-")}</strong></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Expense Details</h2>
+            <div class="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 56px;">S.No</th>
+                    <th style="width: 110px;">Expense Date</th>
+                    <th>Expense Description</th>
+                    <th style="width: 132px; text-align: right;">Invoice Amount</th>
+                    <th style="width: 120px;">Remarks</th>
+                    <th style="width: 165px;">Company Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="summary-row-wrap">
+              <div class="summary-card">
+                <h3>Summary</h3>
+                <div class="summary-line">
+                  <span>Claim Title</span>
+                  <strong>${documentTitle}</strong>
+                </div>
+                <div class="summary-line">
+                  <span>Expense Rows</span>
+                  <strong>${items.length}</strong>
+                </div>
+                <div class="summary-line">
+                  <span>Employee</span>
+                  <strong>${escapeHtml(form.employeeName || "-")}</strong>
+                </div>
+                <div class="summary-line total">
+                  <span>Total Claim Amount</span>
+                  <strong>${escapeHtml(formatCurrency(total))}</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Important Notes</h2>
+            <ul class="notes">${notesList}</ul>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Declaration</h2>
+            <div class="declaration">${escapeHtml(form.declaration || "-")}</div>
+
+            <div class="signatures">
+              <div class="signature">Employee Signature</div>
+              <div class="signature">Reporting Head</div>
+              <div class="signature">Finance Approval</div>
+            </div>
+          </section>
+
+          <footer class="footer">
+            <div>
+              <div>This is a system-generated reimbursement bill.</div>
+              <div>Attach invoices and supporting documents before submission.</div>
+            </div>
+            <div style="text-align: right;">
+              <div>Aionion Capital</div>
+              <div>Event Finance and Operations</div>
+            </div>
+          </footer>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
+const openPrintWindow = (form: ReimbursementForm, items: ReimbursementItem[]) => {
+  const printWindow = window.open("", "_blank");
+
+  if (!printWindow) {
+    toast.error("Please allow popups to open the bill preview.");
     return false;
   }
+
+  printWindow.document.write(buildReimbursementPrintHtml(form, items));
+  printWindow.document.close();
+
+  setTimeout(() => {
+    printWindow.focus();
+    printWindow.print();
+  }, 500);
+
+  return true;
 };
 
 export default function FeedbackFormPage() {
-  const [form, setForm] = useState<FormState>({});
+  const [draft] = useState(getInitialDraft);
+  const [form, setForm] = useState<ReimbursementForm>(draft.form);
+  const [items, setItems] = useState<ReimbursementItem[]>(draft.items);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, items }));
+  }, [form, items]);
+
+  const meaningfulItems = items.filter(
+    (item) =>
+      item.expenseDate ||
+      item.description.trim() ||
+      item.invoiceAmount.trim() ||
+      item.remarks.trim() ||
+      item.companyName.trim() !== DEFAULT_COMPANY_NAME,
+  );
+  const totalAmount = meaningfulItems.reduce(
+    (sum, item) => sum + amountFromString(item.invoiceAmount),
+    0,
+  );
+  const isClaimReady =
+    form.employeeName.trim() &&
+    form.accountNumber.trim() &&
+    form.ifscCode.trim() &&
+    meaningfulItems.length > 0;
+
+  const handleFormChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value } = event.target;
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const submittedForm: FormState = {};
+  const handleItemChange = (
+    itemId: string,
+    field: keyof Omit<ReimbursementItem, "id">,
+    value: string,
+  ) => {
+    setItems((current) =>
+      current.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
+    );
+  };
 
-    formData.forEach((value, key) => {
-      submittedForm[key] = String(value).trim();
-    });
+  const addExpenseRow = () => {
+    const lastItem = items[items.length - 1];
+    setItems((current) => [
+      ...current,
+      createExpenseItem({
+        remarks: form.employeeName || lastItem?.remarks || "",
+        companyName: lastItem?.companyName || DEFAULT_COMPANY_NAME,
+      }),
+    ]);
+  };
 
-    setForm(submittedForm);
-    console.log(submittedForm);
-    const { blob, fileName } = buildFeedbackPdf(submittedForm);
-    downloadFeedbackPdf(blob, fileName);
-    await tryNativeShare(blob, fileName);
-    openWhatsAppChat(fileName);
-    alert("Form submitted. PDF downloaded and WhatsApp chat opened.");
-    // Send to backend / CRM API here
+  const removeExpenseRow = (itemId: string) => {
+    if (items.length <= 1) {
+      toast.error("At least one expense row is required.");
+      return;
+    }
+
+    setItems((current) => current.filter((item) => item.id !== itemId));
+  };
+
+  const validateClaim = () => {
+    if (!form.employeeName.trim()) {
+      toast.error("Employee name is required.");
+      return null;
+    }
+
+    if (!form.accountNumber.trim() || !form.ifscCode.trim()) {
+      toast.error("Complete the bank details before generating the claim.");
+      return null;
+    }
+
+    const claimItems = meaningfulItems.filter(
+      (item) => item.description.trim() && amountFromString(item.invoiceAmount) > 0,
+    );
+
+    if (claimItems.length === 0) {
+      toast.error("Add at least one expense with description and amount.");
+      return null;
+    }
+
+    return claimItems;
+  };
+
+  const handlePrintBill = () => {
+    const claimItems = validateClaim();
+    if (!claimItems) return;
+
+    const opened = openPrintWindow(form, claimItems);
+    if (opened) {
+      toast.success("Bill preview opened. Use Print or Save as PDF.");
+    }
+  };
+
+  const handleReset = () => {
+    const confirmed = window.confirm(
+      "Reset this reimbursement page back to the default sample claim?",
+    );
+
+    if (!confirmed) return;
+
+    setForm(DEFAULT_FORM);
+    setItems(DEFAULT_ITEMS);
+    localStorage.removeItem(STORAGE_KEY);
+    toast.success("Reimbursement draft reset.");
   };
 
   return (
-    <div className="financial-form-page">
-      <div className="financial-form-container">
-        <h1>MONEY PECHU</h1>
-        <p className="form-subtitle">Feedback Form - Financial and Insurance Questionnaire</p>
+    <div className="reimbursement-page">
+      <div className="reimbursement-shell">
+        <section className="reimbursement-hero">
+          <div className="reimbursement-hero__topline">
+            <Badge className="reimbursement-badge">Aionion Finance Ops</Badge>
+          </div>
 
-        <form onSubmit={handleSubmit}>
-          <h2>Personal Details</h2>
+          <div className="reimbursement-hero__content">
+            <div className="reimbursement-brandmark">
+              <img src={aionionLogo} alt="Aionion" className="no-auto-move" />
+              <div>
+                <p className="reimbursement-eyebrow">Petty Cash Reimbursement</p>
+                <h1>{form.claimTitle}</h1>
+                <p className="reimbursement-subtitle">
+                  The structure mirrors the uploaded reimbursement document, but in a
+                  cleaner responsive layout for the website.
+                </p>
+              </div>
+            </div>
 
-          <input name="fullName" placeholder="Full Name" onChange={handleChange} required />
-          <input name="age" placeholder="Age" onChange={handleChange} />
-          <input name="profession" placeholder="Profession" onChange={handleChange} />
-          <input name="mobile" placeholder="Mobile Number" onChange={handleChange} />
-          <input name="income" placeholder="Monthly Income (approx)" onChange={handleChange} />
+            <div className="reimbursement-metrics">
+              <div className="metric-card">
+                <span>Claim Total</span>
+                <strong>{formatCurrency(totalAmount)}</strong>
+              </div>
+              <div className="metric-card">
+                <span>Expense Lines</span>
+                <strong>{meaningfulItems.length}</strong>
+              </div>
+              <div className="metric-card">
+                <span>Status</span>
+                <strong>{isClaimReady ? "Ready to Export" : "Draft"}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
 
-          <h2>Financial Goals</h2>
+        <div className="reimbursement-grid">
+          <Card className="reimbursement-card">
+            <CardHeader>
+              <div className="reimbursement-card__title">
+                <div className="reimbursement-icon">
+                  <UserRound className="h-4 w-4" />
+                </div>
+                <div>
+                  <CardTitle>Employee and Claim Details</CardTitle>
+                  <CardDescription>
+                    The first block reproduces the employee and bank details from the sheet.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="reimbursement-card__content">
+              <div className="reimbursement-field-grid reimbursement-field-grid--two">
+                <label>
+                  Claim Title
+                  <Input
+                    name="claimTitle"
+                    value={form.claimTitle}
+                    onChange={handleFormChange}
+                    placeholder="Petty Cash Expenses"
+                  />
+                </label>
+                <label>
+                  Location
+                  <Input
+                    name="claimLocation"
+                    value={form.claimLocation}
+                    onChange={handleFormChange}
+                    placeholder="Trichy"
+                  />
+                </label>
+                <label>
+                  Employee Name
+                  <Input
+                    name="employeeName"
+                    value={form.employeeName}
+                    onChange={handleFormChange}
+                    placeholder="T Johnson"
+                  />
+                </label>
+                <label>
+                  Employee ID
+                  <Input
+                    name="employeeId"
+                    value={form.employeeId}
+                    onChange={handleFormChange}
+                    placeholder="ACM0309"
+                  />
+                </label>
+                <label>
+                  Name as per Bank
+                  <Input
+                    name="bankAccountName"
+                    value={form.bankAccountName}
+                    onChange={handleFormChange}
+                    placeholder="T Johnson"
+                  />
+                </label>
+                <label>
+                  Bank Name
+                  <Input
+                    name="bankName"
+                    value={form.bankName}
+                    onChange={handleFormChange}
+                    placeholder="IDFC"
+                  />
+                </label>
+                <label>
+                  Account Number
+                  <Input
+                    name="accountNumber"
+                    value={form.accountNumber}
+                    onChange={handleFormChange}
+                    placeholder="10242735037"
+                  />
+                </label>
+                <label>
+                  IFSC Code
+                  <Input
+                    name="ifscCode"
+                    value={form.ifscCode}
+                    onChange={handleFormChange}
+                    placeholder="IDFB0081833"
+                  />
+                </label>
+              </div>
+            </CardContent>
+          </Card>
 
-          <label>Are your current investments aligned with specific financial goals?</label>
-          <select name="alignedGoals" onChange={handleChange}>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
+          <Card className="reimbursement-card reimbursement-card--sidebar">
+            <CardHeader>
+              <div className="reimbursement-card__title">
+                <div className="reimbursement-icon reimbursement-icon--accent">
+                  <Wallet className="h-4 w-4" />
+                </div>
+                <div>
+                  <CardTitle>Claim Snapshot</CardTitle>
+                  <CardDescription>
+                    Use this layout for reimbursement claims across cities, events, and teams.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="reimbursement-sidebar">
+              <div className="snapshot-item">
+                <div className="snapshot-item__label">
+                  <MapPin className="h-4 w-4" />
+                  Claim location
+                </div>
+                <strong>{form.claimLocation || "-"}</strong>
+              </div>
 
-          <textarea
-            name="topGoals"
-            placeholder="Top 3 financial goals in order of priority"
-            onChange={handleChange}
-          />
+              <div className="snapshot-item">
+                <div className="snapshot-item__label">
+                  <Landmark className="h-4 w-4" />
+                  Bank verification
+                </div>
+                <strong>
+                  {form.bankName && form.accountNumber && form.ifscCode ? "Complete" : "Pending"}
+                </strong>
+              </div>
 
-          <input
-            name="retirementAge"
-            placeholder="At what age do you expect to retire?"
-            onChange={handleChange}
-          />
+              <div className="snapshot-item">
+                <div className="snapshot-item__label">
+                  <Building2 className="h-4 w-4" />
+                  Default company
+                </div>
+                <strong>{meaningfulItems[0]?.companyName || DEFAULT_COMPANY_NAME}</strong>
+              </div>
 
-          <input
-            name="retirementIncome"
-            placeholder="Expected monthly income during retirement (in today's value)"
-            onChange={handleChange}
-          />
+              <div className="reimbursement-status">
+                <span className="reimbursement-status__label">Export status</span>
+                <Badge
+                  variant="outline"
+                  className={
+                    isClaimReady
+                      ? "reimbursement-ready reimbursement-ready--ready"
+                      : "reimbursement-ready reimbursement-ready--draft"
+                  }
+                >
+                  {isClaimReady ? "Ready" : "Needs attention"}
+                </Badge>
+              </div>
 
-          <label>Are funds for your children's education and marriage secured?</label>
-          <select name="childrenFundsSecured" onChange={handleChange}>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
+              <div className="notes-card">
+                <div className="notes-card__header">
+                  <AlertCircle className="h-4 w-4" />
+                  Important Notes
+                </div>
+                <ul className="notes-card__list">
+                  {IMPORTANT_NOTES.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <h2>Child Education and Marriage Planning</h2>
-          <input name="child1EducationAmount" placeholder="Child 1 education amount" onChange={handleChange} />
-          <input name="child1EducationYears" placeholder="Child 1 education in years" onChange={handleChange} />
-          <input name="child1MarriageAmount" placeholder="Child 1 marriage amount" onChange={handleChange} />
-          <input name="child1MarriageYears" placeholder="Child 1 marriage in years" onChange={handleChange} />
-          <input name="child2EducationAmount" placeholder="Child 2 education amount" onChange={handleChange} />
-          <input name="child2EducationYears" placeholder="Child 2 education in years" onChange={handleChange} />
-          <input name="child2MarriageAmount" placeholder="Child 2 marriage amount" onChange={handleChange} />
-          <input name="child2MarriageYears" placeholder="Child 2 marriage in years" onChange={handleChange} />
-          <input name="child3EducationAmount" placeholder="Child 3 education amount" onChange={handleChange} />
-          <input name="child3EducationYears" placeholder="Child 3 education in years" onChange={handleChange} />
-          <input name="child3MarriageAmount" placeholder="Child 3 marriage amount" onChange={handleChange} />
-          <input name="child3MarriageYears" placeholder="Child 3 marriage in years" onChange={handleChange} />
+        <Card className="reimbursement-card reimbursement-ledger">
+          <CardHeader className="reimbursement-ledger__header">
+            <div>
+              <CardTitle>Expense Ledger</CardTitle>
+              <CardDescription>
+                Each row matches the original sheet: date, description, invoice amount,
+                remarks, and company name.
+              </CardDescription>
+            </div>
+            <Button type="button" onClick={addExpenseRow} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Row
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="reimbursement-table">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[64px]">S. No</TableHead>
+                    <TableHead className="min-w-[150px]">Expense Date</TableHead>
+                    <TableHead className="min-w-[300px]">Expense Description</TableHead>
+                    <TableHead className="min-w-[160px]">Invoice Amount</TableHead>
+                    <TableHead className="min-w-[180px]">Remarks If Any</TableHead>
+                    <TableHead className="min-w-[220px]">Company Name</TableHead>
+                    <TableHead className="w-[72px] text-right">Remove</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item, index) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-semibold text-slate-700">{index + 1}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="date"
+                          value={item.expenseDate}
+                          onChange={(event) =>
+                            handleItemChange(item.id, "expenseDate", event.target.value)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={item.description}
+                          onChange={(event) =>
+                            handleItemChange(item.id, "description", event.target.value)
+                          }
+                          placeholder="Chennai to Trichy Train ticket"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.invoiceAmount}
+                          onChange={(event) =>
+                            handleItemChange(item.id, "invoiceAmount", event.target.value)
+                          }
+                          placeholder="0.00"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={item.remarks}
+                          onChange={(event) =>
+                            handleItemChange(item.id, "remarks", event.target.value)
+                          }
+                          placeholder="Johnson"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={item.companyName}
+                          onChange={(event) =>
+                            handleItemChange(item.id, "companyName", event.target.value)
+                          }
+                          placeholder={DEFAULT_COMPANY_NAME}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeExpenseRow(item.id)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={3}>Total</TableCell>
+                    <TableCell className="font-bold">{formatCurrency(totalAmount)}</TableCell>
+                    <TableCell colSpan={3} className="text-right text-muted-foreground">
+                      {meaningfulItems.length} claim line(s)
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
-          <h2>Current Investments</h2>
+        <Card className="reimbursement-card">
+          <CardHeader>
+            <div className="reimbursement-card__title">
+              <div className="reimbursement-icon">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle>Declaration and Export</CardTitle>
+                <CardDescription>
+                  Keep the declaration editable, then open a bill-style document for print or PDF save.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="reimbursement-card__content">
+            <label className="reimbursement-full-width">
+              Declaration
+              <Textarea
+                name="declaration"
+                value={form.declaration}
+                onChange={handleFormChange}
+                className="min-h-[120px]"
+              />
+            </label>
 
-          <input name="mutualFunds" placeholder="Mutual Funds Value" onChange={handleChange} />
-          <input name="stocks" placeholder="Direct Equity Value" onChange={handleChange} />
-          <input name="bonds" placeholder="Bonds / Debt Instruments" onChange={handleChange} />
-          <input name="fd" placeholder="Fixed Deposits" onChange={handleChange} />
-          <input name="gold" placeholder="Gold (grams)" onChange={handleChange} />
-          <input name="savings" placeholder="Savings Account Balance" onChange={handleChange} />
-          <select name="goldStoredAt" onChange={handleChange}>
-            <option>Stored at Home</option>
-            <option>Stored at Bank</option>
-          </select>
+            <div className="reimbursement-actionbar">
+              <div className="reimbursement-actionbar__meta">
+                <span>Auto-saved to this browser.</span>
+                <span>Use the print flow to save the bill as PDF.</span>
+                <span>
+                  Latest visible total: <strong>{formatCurrency(totalAmount)}</strong>
+                </span>
+                <span>
+                  Last expense date:{" "}
+                  <strong>
+                    {meaningfulItems.length > 0
+                      ? formatDisplayDate(
+                          meaningfulItems[meaningfulItems.length - 1]?.expenseDate || "",
+                        )
+                      : "-"}
+                  </strong>
+                </span>
+              </div>
 
-          <h2>Event / Consultation Feedback</h2>
-          <textarea
-            name="purposeOfAttending"
-            placeholder="What was your primary purpose for attending the event or consultation?"
-            onChange={handleChange}
-          />
-          <textarea
-            name="anythingElse"
-            placeholder="Anything else you would like to mention or discuss?"
-            onChange={handleChange}
-          />
-
-          <h2>Insurance Details</h2>
-
-          <label>Do you currently have a health insurance policy for yourself?</label>
-          <select name="healthInsurance" onChange={handleChange}>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-          <input name="healthInsuranceCompany" placeholder="Insurance company name" onChange={handleChange} />
-          <input name="healthInsurancePolicyType" placeholder="Policy type (Individual / Floater)" onChange={handleChange} />
-          <input name="healthInsuranceExpiry" placeholder="Policy expiry date" onChange={handleChange} />
-          <select name="healthInsuranceFromMoneyPechu" onChange={handleChange}>
-            <option>Insurance taken from Money Pechu team? No</option>
-            <option>Insurance taken from Money Pechu team? Yes</option>
-          </select>
-
-          <label>Do you have health insurance for family apart from company group medical?</label>
-          <select name="familyHealthInsuranceApartFromCompany" onChange={handleChange}>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-          <input name="familyMember1Name" placeholder="Family member 1 name" onChange={handleChange} />
-          <input name="familyMember1Dob" placeholder="Family member 1 date of birth" onChange={handleChange} />
-          <input name="familyMember1Relationship" placeholder="Family member 1 relationship" onChange={handleChange} />
-          <input name="familyMember1Pincode" placeholder="Family member 1 pin code" onChange={handleChange} />
-
-          <label>Do you have a term insurance policy (pure risk cover)?</label>
-          <select name="termInsurance" onChange={handleChange}>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-          <select name="termInsuranceFromMoneyPechu" onChange={handleChange}>
-            <option>Term insurance taken from Money Pechu team? No</option>
-            <option>Term insurance taken from Money Pechu team? Yes</option>
-          </select>
-
-          <label>Group medical insurance provided by your company?</label>
-          <select name="groupInsurance" onChange={handleChange}>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-          <input name="companyName" placeholder="Company name" onChange={handleChange} />
-          <input name="companyLocation" placeholder="Company location" onChange={handleChange} />
-          <select name="groupCoverage" onChange={handleChange}>
-            <option>Coverage: Only Self</option>
-            <option>Coverage: Self + Family</option>
-          </select>
-
-          <h2>Vehicle Details</h2>
-
-          <select name="vehicleType" onChange={handleChange}>
-            <option>None</option>
-            <option>Car</option>
-            <option>Bike</option>
-            <option>Both</option>
-          </select>
-
-          <input name="vehicleNumber" placeholder="Vehicle Number" onChange={handleChange} />
-          <input name="vehicleModel" placeholder="Brand &amp; Model" onChange={handleChange} />
-          <input name="policyExpiry" placeholder="Policy Expiry Date" onChange={handleChange} />
-
-          <h2>Preferred Call Time</h2>
-
-          <input type="date" name="callDate" onChange={handleChange} />
-
-          <select name="timeSlot" onChange={handleChange}>
-            <option>9 AM - 12 PM</option>
-            <option>12 PM - 3 PM</option>
-            <option>3 PM - 6 PM</option>
-          </select>
-
-          <h2>Referral</h2>
-
-          <input name="refName" placeholder="Friend Name" onChange={handleChange} />
-          <input name="refMobile" placeholder="Friend Contact Number" onChange={handleChange} />
-          <input name="refRelation" placeholder="Relationship" onChange={handleChange} />
-          <input name="refLocation" placeholder="Location" onChange={handleChange} />
-
-          <button type="submit">Submit</button>
-        </form>
+              <div className="reimbursement-actionbar__buttons">
+                <Button type="button" variant="outline" onClick={handleReset} className="gap-2">
+                  <RefreshCcw className="h-4 w-4" />
+                  Reset Sample
+                </Button>
+                <Button type="button" onClick={handlePrintBill} className="gap-2">
+                  <Printer className="h-4 w-4" />
+                  Print / Save PDF
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
