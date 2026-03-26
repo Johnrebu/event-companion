@@ -679,10 +679,6 @@ export default function FeedbackFormPage() {
               <div>
                 <p className="reimbursement-eyebrow">Petty Cash Reimbursement</p>
                 <h1>{form.claimTitle}</h1>
-                <p className="reimbursement-subtitle">
-                  The structure mirrors the uploaded reimbursement document, but in a
-                  cleaner responsive layout for the website.
-                </p>
               </div>
             </div>
 
