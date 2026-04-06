@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
+import { RouteMeta } from "@/components/RouteMeta";
 import LandingPage from "./pages/LandingPage";
 import Index from "./pages/Index";
 import EventsPage from "./pages/EventsPage";
@@ -22,6 +23,7 @@ const AppContent = () => {
 
   return (
     <>
+      <RouteMeta />
       {!isLandingPage && <Navigation />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
