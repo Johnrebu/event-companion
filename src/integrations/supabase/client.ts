@@ -24,12 +24,16 @@ const SUPABASE_PUBLISHABLE_KEY =
   (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '').trim().replace(/^['"]|['"]$/g, '') ||
   (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim().replace(/^['"]|['"]$/g, '') ||
   'placeholder';
+const isPlaceholderUrl = SUPABASE_URL.includes('placeholder.supabase.co');
+const hasCredentials = SUPABASE_PUBLISHABLE_KEY !== 'placeholder';
 
 export const SUPABASE_RUNTIME_INFO = {
   url: SUPABASE_URL,
   hasProjectId: Boolean(import.meta.env.VITE_SUPABASE_PROJECT_ID),
+  hasUrl: Boolean(import.meta.env.VITE_SUPABASE_URL),
   hasPublishableKey: Boolean(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
   hasAnonKey: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY),
+  isConfigured: !isPlaceholderUrl && hasCredentials,
 };
 
 // Import the supabase client like this:

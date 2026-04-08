@@ -28,7 +28,11 @@ const formatSupabaseError = (err: unknown, fallback: string) => {
         return baseMessage;
     }
 
-    return `${fallback}. Cannot reach Supabase at ${SUPABASE_RUNTIME_INFO.url}. Check VITE_SUPABASE_URL / VITE_SUPABASE_PROJECT_ID in deployment env vars.`;
+    if (!SUPABASE_RUNTIME_INFO.isConfigured) {
+        return `${fallback}. Supabase is not configured for this deployment. Add VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID, plus VITE_SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_ANON_KEY.`;
+    }
+
+    return `${fallback}. Cannot reach Supabase at ${SUPABASE_RUNTIME_INFO.url}. Check that the URL is correct and that VITE_SUPABASE_URL, VITE_SUPABASE_PROJECT_ID, and VITE_SUPABASE_PUBLISHABLE_KEY are set correctly in deployment env vars.`;
 };
 
 export interface SavedExpenseReport {

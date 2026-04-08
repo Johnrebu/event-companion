@@ -105,10 +105,6 @@ const Index = () => {
     }
   }, [isSavedReportsOpen, fetchReports]);
 
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
-
   const handleSaveToDatabase = async () => {
     if (!eventDetails.eventName) {
       toast.error("Please enter an event name before saving");
