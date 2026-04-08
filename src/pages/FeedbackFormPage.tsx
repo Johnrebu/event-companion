@@ -25,6 +25,7 @@ import "./FeedbackFormPage.css";
 
 type ReimbursementForm = {
   claimTitle: string;
+  claimSubtitle: string;
   claimLocation: string;
   employeeName: string;
   employeeId: string;
@@ -52,6 +53,7 @@ type SavedDraft = {
 const STORAGE_KEY = "aionion-reimbursement-draft";
 const DEFAULT_CLAIM_TITLE = "Petty Cash Expenses";
 const DEFAULT_COMPANY_NAME = "Corona creative solution";
+const DEFAULT_PRINT_LABEL = "Reimbursement Form";
 
 const IMPORTANT_NOTES = [
   "Attach the respective invoices and CC the reporting head.",
@@ -64,6 +66,7 @@ const IMPORTANT_NOTES = [
 
 const INITIAL_FORM: ReimbursementForm = {
   claimTitle: "",
+  claimSubtitle: "",
   claimLocation: "",
   employeeName: "",
   employeeId: "",
@@ -76,6 +79,7 @@ const INITIAL_FORM: ReimbursementForm = {
 
 const LEGACY_SAMPLE_FORM: ReimbursementForm = {
   claimTitle: DEFAULT_CLAIM_TITLE,
+  claimSubtitle: "",
   claimLocation: "Trichy",
   employeeName: "T Johnson",
   employeeId: "ACM0309",
@@ -145,13 +149,6 @@ const amountFromString = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const slugify = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, "&amp;")
@@ -162,6 +159,7 @@ const escapeHtml = (value: string) =>
 
 const normalizeForm = (form?: Partial<ReimbursementForm>): ReimbursementForm => ({
   claimTitle: form?.claimTitle ?? "",
+  claimSubtitle: form?.claimSubtitle ?? "",
   claimLocation: form?.claimLocation ?? "",
   employeeName: form?.employeeName ?? "",
   employeeId: form?.employeeId ?? "",
@@ -249,16 +247,15 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
 
   const notesList = IMPORTANT_NOTES.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
   const generatedOn = escapeHtml(new Date().toLocaleString("en-IN"));
-  const documentTitle = escapeHtml(form.claimTitle || "Petty Cash Reimbursement");
-  const employeeSlug = slugify(form.employeeName) || "employee";
-  const locationSlug = slugify(form.claimLocation) || "claim";
+  const documentTitle = escapeHtml(form.claimTitle || DEFAULT_CLAIM_TITLE);
+  const documentSubtitle = escapeHtml(form.claimSubtitle);
 
   return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>${documentTitle} - ${employeeSlug}-${locationSlug}</title>
+        <title>${documentTitle}</title>
         <style>
           * { box-sizing: border-box; }
           body {
@@ -500,9 +497,9 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
             <div class="brand">
               <img src="${aionionLogo}" alt="Aionion" />
               <div>
-                <p class="eyebrow">Expense Bill Format</p>
+                <p class="eyebrow">${DEFAULT_PRINT_LABEL}</p>
                 <h1 class="title">${documentTitle}</h1>
-                <p class="subtitle">Petty cash reimbursement statement for events, travel, and local conveyance.</p>
+                ${documentSubtitle ? `<p class="subtitle">${documentSubtitle}</p>` : ""}
               </div>
             </div>
             <div class="header-meta">
@@ -751,8 +748,11 @@ export default function FeedbackFormPage() {
             <div className="reimbursement-brandmark">
               <img src={aionionLogo} alt="Aionion" className="no-auto-move" />
               <div>
-                <p className="reimbursement-eyebrow">Petty Cash Reimbursement</p>
+                <p className="reimbursement-eyebrow">{DEFAULT_PRINT_LABEL}</p>
                 <h1>{form.claimTitle || DEFAULT_CLAIM_TITLE}</h1>
+                {form.claimSubtitle ? (
+                  <p className="reimbursement-subtitle">{form.claimSubtitle}</p>
+                ) : null}
               </div>
             </div>
 
@@ -797,6 +797,16 @@ export default function FeedbackFormPage() {
                     value={form.claimTitle}
                     onChange={handleFormChange}
                     placeholder="Enter claim title"
+                  />
+                </label>
+                <label className="reimbursement-full-width" style={{ gridColumn: "1 / -1" }}>
+                  Bill Subtitle
+                  <Textarea
+                    name="claimSubtitle"
+                    value={form.claimSubtitle}
+                    onChange={handleFormChange}
+                    className="min-h-[88px]"
+                    placeholder="Optional subtitle for the printable bill"
                   />
                 </label>
                 <label>
