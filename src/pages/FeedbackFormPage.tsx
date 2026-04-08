@@ -50,6 +50,7 @@ type SavedDraft = {
 };
 
 const STORAGE_KEY = "aionion-reimbursement-draft";
+const DEFAULT_CLAIM_TITLE = "Petty Cash Expenses";
 const DEFAULT_COMPANY_NAME = "Corona creative solution";
 
 const IMPORTANT_NOTES = [
@@ -61,8 +62,20 @@ const IMPORTANT_NOTES = [
   "Crosscheck the account number before sending the claim.",
 ];
 
-const DEFAULT_FORM: ReimbursementForm = {
-  claimTitle: "Petty Cash Expenses",
+const INITIAL_FORM: ReimbursementForm = {
+  claimTitle: "",
+  claimLocation: "",
+  employeeName: "",
+  employeeId: "",
+  bankAccountName: "",
+  bankName: "",
+  accountNumber: "",
+  ifscCode: "",
+  declaration: "",
+};
+
+const LEGACY_SAMPLE_FORM: ReimbursementForm = {
+  claimTitle: DEFAULT_CLAIM_TITLE,
   claimLocation: "Trichy",
   employeeName: "T Johnson",
   employeeId: "ACM0309",
@@ -84,25 +97,30 @@ const createExpenseItem = (overrides: Partial<ReimbursementItem> = {}): Reimburs
   ...overrides,
 });
 
-const DEFAULT_ITEMS: ReimbursementItem[] = [
-  createExpenseItem({
+const INITIAL_ITEMS: ReimbursementItem[] = [createExpenseItem()];
+
+const LEGACY_SAMPLE_ITEMS = [
+  {
     expenseDate: "2026-03-20",
     description: "Chennai to Trichy Train ticket",
     invoiceAmount: "175",
     remarks: "Johnson",
-  }),
-  createExpenseItem({
+    companyName: DEFAULT_COMPANY_NAME,
+  },
+  {
     expenseDate: "2026-03-23",
     description: "Water case for Anand sir",
     invoiceAmount: "100",
     remarks: "Johnson",
-  }),
-  createExpenseItem({
+    companyName: DEFAULT_COMPANY_NAME,
+  },
+  {
     expenseDate: "2026-03-23",
     description: "PER DAY EXPENSES",
     invoiceAmount: "500",
     remarks: "Johnson",
-  }),
+    companyName: DEFAULT_COMPANY_NAME,
+  },
 ];
 
 const formatCurrency = (value: number) =>
@@ -142,23 +160,74 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+const normalizeForm = (form?: Partial<ReimbursementForm>): ReimbursementForm => ({
+  claimTitle: form?.claimTitle ?? "",
+  claimLocation: form?.claimLocation ?? "",
+  employeeName: form?.employeeName ?? "",
+  employeeId: form?.employeeId ?? "",
+  bankAccountName: form?.bankAccountName ?? "",
+  bankName: form?.bankName ?? "",
+  accountNumber: form?.accountNumber ?? "",
+  ifscCode: form?.ifscCode ?? "",
+  declaration: form?.declaration ?? "",
+});
+
+const normalizeItem = (item?: Partial<ReimbursementItem>) => ({
+  expenseDate: item?.expenseDate ?? "",
+  description: item?.description ?? "",
+  invoiceAmount: item?.invoiceAmount ?? "",
+  remarks: item?.remarks ?? "",
+  companyName: item?.companyName ?? DEFAULT_COMPANY_NAME,
+});
+
+const getEmptyDraft = (): SavedDraft => ({
+  form: INITIAL_FORM,
+  items: INITIAL_ITEMS,
+});
+
+const isLegacySeedDraft = (draft: Partial<SavedDraft>) =>
+  JSON.stringify({
+    form: normalizeForm(draft.form),
+    items: Array.isArray(draft.items) ? draft.items.map((item) => normalizeItem(item)) : [],
+  }) ===
+  JSON.stringify({
+    form: LEGACY_SAMPLE_FORM,
+    items: LEGACY_SAMPLE_ITEMS,
+  });
+
+const hasDraftContent = (form: ReimbursementForm, items: ReimbursementItem[]) =>
+  Object.values(form).some((value) => value.trim()) ||
+  items.some(
+    (item) =>
+      item.expenseDate ||
+      item.description.trim() ||
+      item.invoiceAmount.trim() ||
+      item.remarks.trim() ||
+      item.companyName.trim() !== DEFAULT_COMPANY_NAME,
+  );
+
 const getInitialDraft = (): SavedDraft => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) {
-      return { form: DEFAULT_FORM, items: DEFAULT_ITEMS };
+      return getEmptyDraft();
     }
 
     const parsed = JSON.parse(saved) as Partial<SavedDraft>;
+    if (isLegacySeedDraft(parsed)) {
+      localStorage.removeItem(STORAGE_KEY);
+      return getEmptyDraft();
+    }
+
     return {
-      form: { ...DEFAULT_FORM, ...(parsed.form ?? {}) },
+      form: { ...INITIAL_FORM, ...(parsed.form ?? {}) },
       items:
         parsed.items && parsed.items.length > 0
           ? parsed.items.map((item) => createExpenseItem(item))
-          : DEFAULT_ITEMS,
+          : INITIAL_ITEMS,
     };
   } catch {
-    return { form: DEFAULT_FORM, items: DEFAULT_ITEMS };
+    return getEmptyDraft();
   }
 };
 
@@ -558,7 +627,12 @@ export default function FeedbackFormPage() {
   const [items, setItems] = useState<ReimbursementItem[]>(draft.items);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, items }));
+    if (hasDraftContent(form, items)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, items }));
+      return;
+    }
+
+    localStorage.removeItem(STORAGE_KEY);
   }, [form, items]);
 
   const meaningfulItems = items.filter(
@@ -654,15 +728,15 @@ export default function FeedbackFormPage() {
 
   const handleReset = () => {
     const confirmed = window.confirm(
-      "Reset this reimbursement page back to the default sample claim?",
+      "Clear this reimbursement form and remove the saved browser draft?",
     );
 
     if (!confirmed) return;
 
-    setForm(DEFAULT_FORM);
-    setItems(DEFAULT_ITEMS);
+    setForm(INITIAL_FORM);
+    setItems(INITIAL_ITEMS);
     localStorage.removeItem(STORAGE_KEY);
-    toast.success("Reimbursement draft reset.");
+    toast.success("Reimbursement form cleared.");
   };
 
   return (
@@ -678,7 +752,7 @@ export default function FeedbackFormPage() {
               <img src={aionionLogo} alt="Aionion" className="no-auto-move" />
               <div>
                 <p className="reimbursement-eyebrow">Petty Cash Reimbursement</p>
-                <h1>{form.claimTitle}</h1>
+                <h1>{form.claimTitle || DEFAULT_CLAIM_TITLE}</h1>
               </div>
             </div>
 
@@ -722,7 +796,7 @@ export default function FeedbackFormPage() {
                     name="claimTitle"
                     value={form.claimTitle}
                     onChange={handleFormChange}
-                    placeholder="Petty Cash Expenses"
+                    placeholder="Enter claim title"
                   />
                 </label>
                 <label>
@@ -731,7 +805,7 @@ export default function FeedbackFormPage() {
                     name="claimLocation"
                     value={form.claimLocation}
                     onChange={handleFormChange}
-                    placeholder="Trichy"
+                    placeholder="Enter city"
                   />
                 </label>
                 <label>
@@ -740,7 +814,7 @@ export default function FeedbackFormPage() {
                     name="employeeName"
                     value={form.employeeName}
                     onChange={handleFormChange}
-                    placeholder="T Johnson"
+                    placeholder="Enter employee name"
                   />
                 </label>
                 <label>
@@ -749,7 +823,7 @@ export default function FeedbackFormPage() {
                     name="employeeId"
                     value={form.employeeId}
                     onChange={handleFormChange}
-                    placeholder="ACM0309"
+                    placeholder="Enter employee ID"
                   />
                 </label>
                 <label>
@@ -758,7 +832,7 @@ export default function FeedbackFormPage() {
                     name="bankAccountName"
                     value={form.bankAccountName}
                     onChange={handleFormChange}
-                    placeholder="T Johnson"
+                    placeholder="Enter account holder name"
                   />
                 </label>
                 <label>
@@ -767,7 +841,7 @@ export default function FeedbackFormPage() {
                     name="bankName"
                     value={form.bankName}
                     onChange={handleFormChange}
-                    placeholder="IDFC"
+                    placeholder="Enter bank name"
                   />
                 </label>
                 <label>
@@ -776,7 +850,7 @@ export default function FeedbackFormPage() {
                     name="accountNumber"
                     value={form.accountNumber}
                     onChange={handleFormChange}
-                    placeholder="10242735037"
+                    placeholder="Enter account number"
                   />
                 </label>
                 <label>
@@ -785,7 +859,7 @@ export default function FeedbackFormPage() {
                     name="ifscCode"
                     value={form.ifscCode}
                     onChange={handleFormChange}
-                    placeholder="IDFB0081833"
+                    placeholder="Enter IFSC code"
                   />
                 </label>
               </div>
@@ -909,7 +983,7 @@ export default function FeedbackFormPage() {
                           onChange={(event) =>
                             handleItemChange(item.id, "description", event.target.value)
                           }
-                          placeholder="Chennai to Trichy Train ticket"
+                          placeholder="Describe the expense"
                         />
                       </TableCell>
                       <TableCell>
@@ -930,7 +1004,7 @@ export default function FeedbackFormPage() {
                           onChange={(event) =>
                             handleItemChange(item.id, "remarks", event.target.value)
                           }
-                          placeholder="Johnson"
+                          placeholder="Optional note"
                         />
                       </TableCell>
                       <TableCell>
@@ -992,6 +1066,7 @@ export default function FeedbackFormPage() {
                 value={form.declaration}
                 onChange={handleFormChange}
                 className="min-h-[120px]"
+                placeholder="Enter a short declaration for this claim"
               />
             </label>
 
@@ -1017,7 +1092,7 @@ export default function FeedbackFormPage() {
               <div className="reimbursement-actionbar__buttons">
                 <Button type="button" variant="outline" onClick={handleReset} className="gap-2">
                   <RefreshCcw className="h-4 w-4" />
-                  Reset Sample
+                  Clear Form
                 </Button>
                 <Button type="button" onClick={handlePrintBill} className="gap-2">
                   <Printer className="h-4 w-4" />
