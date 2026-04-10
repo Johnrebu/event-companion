@@ -3,35 +3,7 @@
   min-height: calc(100vh - 4rem);
   overflow: hidden;
   padding: 24px 16px 64px;
-  background:
-    radial-gradient(circle at top left, rgba(13, 87, 150, 0.16), transparent 32%),
-    radial-gradient(circle at top right, rgba(214, 41, 51, 0.12), transparent 26%),
-    linear-gradient(180deg, #f6f8fc 0%, #eef2f7 100%);
-}
-
-.reimbursement-page::before,
-.reimbursement-page::after {
-  content: "";
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(30px);
-  pointer-events: none;
-}
-
-.reimbursement-page::before {
-  top: 120px;
-  right: -80px;
-  height: 280px;
-  width: 280px;
-  background: rgba(11, 86, 149, 0.12);
-}
-
-.reimbursement-page::after {
-  bottom: 80px;
-  left: -120px;
-  height: 240px;
-  width: 240px;
-  background: rgba(214, 41, 51, 0.1);
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
 }
 
 .reimbursement-shell {
@@ -44,28 +16,20 @@
 }
 
 .reimbursement-hero {
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 28px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(247, 249, 252, 0.88)),
-    linear-gradient(135deg, rgba(11, 86, 149, 0.04), rgba(214, 41, 51, 0.02));
-  box-shadow:
-    0 24px 48px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-}
-
-.reimbursement-hero__topline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 18px;
+  display: grid;
+  gap: 22px;
+  align-items: center;
+  padding: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
 }
 
 .reimbursement-badge {
   border-radius: 999px;
-  background: #0b5695;
+  width: fit-content;
+  background: #15213b;
   color: #fff;
 }
 
@@ -75,57 +39,59 @@
   color: #0f172a;
 }
 
-.reimbursement-hero__content {
-  display: grid;
-  gap: 24px;
-}
-
 .reimbursement-brandmark {
-  display: grid;
+  display: flex;
   gap: 18px;
   align-items: center;
+  min-width: 0;
 }
 
 .reimbursement-brandmark img {
-  width: 132px;
+  width: 138px;
   height: auto;
+  flex: 0 0 auto;
 }
 
-.reimbursement-eyebrow {
-  margin: 0 0 8px;
-  color: #0b5695;
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+.reimbursement-hero__copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
 }
 
 .reimbursement-hero h1 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 3.6rem);
-  line-height: 0.95;
+  font-size: 2.25rem;
+  line-height: 1;
   color: #0f172a;
 }
 
+.reimbursement-claim-title {
+  margin: 0;
+  color: #0b5695;
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
 .reimbursement-subtitle {
-  max-width: 56rem;
-  margin: 14px 0 0;
+  max-width: 42rem;
+  margin: 0;
   color: #475569;
   font-size: 1rem;
-  line-height: 1.8;
+  line-height: 1.6;
 }
 
 .reimbursement-metrics {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
 .metric-card {
-  padding: 18px 20px;
+  min-height: 96px;
+  padding: 18px;
   border: 1px solid rgba(11, 86, 149, 0.14);
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(244, 247, 251, 0.95));
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .metric-card span {
@@ -134,7 +100,7 @@
   color: #64748b;
   font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -151,7 +117,7 @@
 
 .reimbursement-card {
   border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 24px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(8px);
@@ -174,7 +140,7 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(11, 86, 149, 0.1);
   color: #0b5695;
 }
@@ -206,7 +172,7 @@
 .snapshot-item {
   padding: 14px 16px;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 18px;
+  border-radius: 8px;
   background: rgba(248, 250, 252, 0.86);
 }
 
@@ -218,7 +184,7 @@
   color: #64748b;
   font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -233,7 +199,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 16px;
+  border-radius: 8px;
   background: rgba(15, 23, 42, 0.04);
 }
 
@@ -261,7 +227,7 @@
 
 .notes-card {
   padding: 18px;
-  border-radius: 20px;
+  border-radius: 8px;
   background: linear-gradient(180deg, rgba(11, 86, 149, 0.06), rgba(11, 86, 149, 0.02));
 }
 
@@ -294,7 +260,7 @@
 .reimbursement-table {
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 18px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -307,7 +273,7 @@
   color: #475569;
   font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -323,7 +289,7 @@
   display: grid;
   gap: 18px;
   padding: 18px;
-  border-radius: 20px;
+  border-radius: 8px;
   background:
     linear-gradient(135deg, rgba(11, 86, 149, 0.07), rgba(214, 41, 51, 0.04)),
     rgba(248, 250, 252, 0.96);
@@ -349,11 +315,7 @@
   }
 
   .reimbursement-hero {
-    padding: 32px;
-  }
-
-  .reimbursement-brandmark {
-    grid-template-columns: auto 1fr;
+    padding: 28px;
   }
 
   .reimbursement-grid {
@@ -377,9 +339,12 @@
 }
 
 @media (min-width: 1024px) {
-  .reimbursement-hero__content {
-    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-    align-items: end;
+  .reimbursement-hero {
+    grid-template-columns: minmax(420px, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .reimbursement-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -390,7 +355,19 @@
 
   .reimbursement-hero,
   .reimbursement-card {
-    border-radius: 22px;
+    border-radius: 8px;
+  }
+
+  .reimbursement-brandmark {
+    align-items: flex-start;
+  }
+
+  .reimbursement-brandmark img {
+    width: 116px;
+  }
+
+  .reimbursement-hero h1 {
+    font-size: 1.8rem;
   }
 
   .metric-card strong {

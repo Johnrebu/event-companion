@@ -51,7 +51,7 @@ type SavedDraft = {
 };
 
 const STORAGE_KEY = "aionion-reimbursement-draft";
-const DEFAULT_CLAIM_TITLE = "Petty Cash Expenses";
+const REMOVED_CLAIM_TITLE = "Petty Cash Expenses";
 const DEFAULT_COMPANY_NAME = "Corona creative solution";
 const DEFAULT_PRINT_LABEL = "Reimbursement Form";
 
@@ -78,7 +78,7 @@ const INITIAL_FORM: ReimbursementForm = {
 };
 
 const LEGACY_SAMPLE_FORM: ReimbursementForm = {
-  claimTitle: DEFAULT_CLAIM_TITLE,
+  claimTitle: REMOVED_CLAIM_TITLE,
   claimSubtitle: "",
   claimLocation: "Trichy",
   employeeName: "T Johnson",
@@ -217,8 +217,17 @@ const getInitialDraft = (): SavedDraft => {
       return getEmptyDraft();
     }
 
+    const savedForm: Partial<ReimbursementForm> = parsed.form ?? {};
+
     return {
-      form: { ...INITIAL_FORM, ...(parsed.form ?? {}) },
+      form: {
+        ...INITIAL_FORM,
+        ...savedForm,
+        claimTitle:
+          savedForm.claimTitle === REMOVED_CLAIM_TITLE
+            ? INITIAL_FORM.claimTitle
+            : savedForm.claimTitle ?? INITIAL_FORM.claimTitle,
+      },
       items:
         parsed.items && parsed.items.length > 0
           ? parsed.items.map((item) => createExpenseItem(item))
@@ -247,7 +256,10 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
 
   const notesList = IMPORTANT_NOTES.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
   const generatedOn = escapeHtml(new Date().toLocaleString("en-IN"));
-  const documentTitle = escapeHtml(form.claimTitle || DEFAULT_CLAIM_TITLE);
+  const claimTitle = form.claimTitle.trim();
+  const documentTitle = escapeHtml(claimTitle || DEFAULT_PRINT_LABEL);
+  const documentHeading = claimTitle ? `<h1 class="title">${escapeHtml(claimTitle)}</h1>` : "";
+  const summaryClaimTitle = escapeHtml(claimTitle || "-");
   const documentSubtitle = escapeHtml(form.claimSubtitle);
 
   return `
@@ -297,7 +309,7 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
             color: #0b5695;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: 0.18em;
+            letter-spacing: 0;
             text-transform: uppercase;
           }
           .title {
@@ -350,7 +362,7 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
             color: #64748b;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: 0.08em;
+            letter-spacing: 0;
             text-transform: uppercase;
           }
           .detail-card strong {
@@ -375,7 +387,7 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
             text-align: left;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: 0.08em;
+            letter-spacing: 0;
             text-transform: uppercase;
           }
           tbody td {
@@ -498,7 +510,7 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
               <img src="${aionionLogo}" alt="Aionion" />
               <div>
                 <p class="eyebrow">${DEFAULT_PRINT_LABEL}</p>
-                <h1 class="title">${documentTitle}</h1>
+                ${documentHeading}
                 ${documentSubtitle ? `<p class="subtitle">${documentSubtitle}</p>` : ""}
               </div>
             </div>
@@ -549,7 +561,7 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
                 <h3>Summary</h3>
                 <div class="summary-line">
                   <span>Claim Title</span>
-                  <strong>${documentTitle}</strong>
+                  <strong>${summaryClaimTitle}</strong>
                 </div>
                 <div class="summary-line">
                   <span>Expense Rows</span>
@@ -740,35 +752,32 @@ export default function FeedbackFormPage() {
     <div className="reimbursement-page">
       <div className="reimbursement-shell">
         <section className="reimbursement-hero">
-          <div className="reimbursement-hero__topline">
-            <Badge className="reimbursement-badge">Aionion Finance Ops</Badge>
+          <div className="reimbursement-brandmark">
+            <img src={aionionLogo} alt="Aionion" className="no-auto-move" />
+            <div className="reimbursement-hero__copy">
+              <Badge className="reimbursement-badge">Aionion Finance Ops</Badge>
+              <h1>{DEFAULT_PRINT_LABEL}</h1>
+              {form.claimTitle.trim() ? (
+                <p className="reimbursement-claim-title">{form.claimTitle.trim()}</p>
+              ) : null}
+              {form.claimSubtitle ? (
+                <p className="reimbursement-subtitle">{form.claimSubtitle}</p>
+              ) : null}
+            </div>
           </div>
 
-          <div className="reimbursement-hero__content">
-            <div className="reimbursement-brandmark">
-              <img src={aionionLogo} alt="Aionion" className="no-auto-move" />
-              <div>
-                <p className="reimbursement-eyebrow">{DEFAULT_PRINT_LABEL}</p>
-                <h1>{form.claimTitle || DEFAULT_CLAIM_TITLE}</h1>
-                {form.claimSubtitle ? (
-                  <p className="reimbursement-subtitle">{form.claimSubtitle}</p>
-                ) : null}
-              </div>
+          <div className="reimbursement-metrics">
+            <div className="metric-card">
+              <span>Claim Total</span>
+              <strong>{formatCurrency(totalAmount)}</strong>
             </div>
-
-            <div className="reimbursement-metrics">
-              <div className="metric-card">
-                <span>Claim Total</span>
-                <strong>{formatCurrency(totalAmount)}</strong>
-              </div>
-              <div className="metric-card">
-                <span>Expense Lines</span>
-                <strong>{meaningfulItems.length}</strong>
-              </div>
-              <div className="metric-card">
-                <span>Status</span>
-                <strong>{isClaimReady ? "Ready to Export" : "Draft"}</strong>
-              </div>
+            <div className="metric-card">
+              <span>Expense Lines</span>
+              <strong>{meaningfulItems.length}</strong>
+            </div>
+            <div className="metric-card">
+              <span>Status</span>
+              <strong>{isClaimReady ? "Ready to Export" : "Draft"}</strong>
             </div>
           </div>
         </section>
