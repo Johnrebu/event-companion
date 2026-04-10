@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import {
   AlertCircle,
   Building2,
+  Download,
   FileText,
   Landmark,
   MapPin,
@@ -54,6 +55,7 @@ const STORAGE_KEY = "aionion-reimbursement-draft";
 const REMOVED_CLAIM_TITLE = "Petty Cash Expenses";
 const DEFAULT_COMPANY_NAME = "Corona creative solution";
 const DEFAULT_PRINT_LABEL = "Reimbursement Form";
+const WORD_DOCUMENT_MIME_TYPE = "application/msword;charset=utf-8";
 
 const IMPORTANT_NOTES = [
   "Attach the respective invoices and CC the reporting head.",
@@ -156,6 +158,23 @@ const escapeHtml = (value: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+const sanitizeFileNamePart = (value: string) =>
+  value
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+
+const getExportFileName = (form: ReimbursementForm, extension: string) => {
+  const employeeName = sanitizeFileNamePart(form.employeeName);
+  const claimTitle = sanitizeFileNamePart(form.claimTitle);
+  const baseName = [employeeName, claimTitle || "reimbursement-form"]
+    .filter(Boolean)
+    .join("-");
+
+  return `${baseName || "reimbursement-form"}-${format(new Date(), "yyyy-MM-dd")}.${extension}`;
+};
 
 const normalizeForm = (form?: Partial<ReimbursementForm>): ReimbursementForm => ({
   claimTitle: form?.claimTitle ?? "",
@@ -630,6 +649,22 @@ const openPrintWindow = (form: ReimbursementForm, items: ReimbursementItem[]) =>
   return true;
 };
 
+const downloadWordDocument = (form: ReimbursementForm, items: ReimbursementItem[]) => {
+  const documentBlob = new Blob(["\ufeff", buildReimbursementPrintHtml(form, items)], {
+    type: WORD_DOCUMENT_MIME_TYPE,
+  });
+  const documentUrl = URL.createObjectURL(documentBlob);
+  const downloadLink = document.createElement("a");
+
+  downloadLink.href = documentUrl;
+  downloadLink.download = getExportFileName(form, "doc");
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+
+  window.setTimeout(() => URL.revokeObjectURL(documentUrl), 0);
+};
+
 export default function FeedbackFormPage() {
   const [draft] = useState(getInitialDraft);
   const [form, setForm] = useState<ReimbursementForm>(draft.form);
@@ -733,6 +768,14 @@ export default function FeedbackFormPage() {
     if (opened) {
       toast.success("Bill preview opened. Use Print or Save as PDF.");
     }
+  };
+
+  const handleDownloadWord = () => {
+    const claimItems = validateClaim();
+    if (!claimItems) return;
+
+    downloadWordDocument(form, claimItems);
+    toast.success("Word document downloaded.");
   };
 
   const handleReset = () => {
@@ -1072,7 +1115,7 @@ export default function FeedbackFormPage() {
               <div>
                 <CardTitle>Declaration and Export</CardTitle>
                 <CardDescription>
-                  Keep the declaration editable, then open a bill-style document for print or PDF save.
+                  Keep the declaration editable, then export the bill for print, PDF, or Word.
                 </CardDescription>
               </div>
             </div>
@@ -1092,7 +1135,7 @@ export default function FeedbackFormPage() {
             <div className="reimbursement-actionbar">
               <div className="reimbursement-actionbar__meta">
                 <span>Auto-saved to this browser.</span>
-                <span>Use the print flow to save the bill as PDF.</span>
+                <span>Use the export actions to save the bill as PDF or Word.</span>
                 <span>
                   Latest visible total: <strong>{formatCurrency(totalAmount)}</strong>
                 </span>
@@ -1116,6 +1159,10 @@ export default function FeedbackFormPage() {
                 <Button type="button" onClick={handlePrintBill} className="gap-2">
                   <Printer className="h-4 w-4" />
                   Print / Save PDF
+                </Button>
+                <Button type="button" onClick={handleDownloadWord} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Download Word
                 </Button>
               </div>
             </div>
