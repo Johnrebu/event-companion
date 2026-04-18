@@ -1,5 +1,5 @@
 import { ExpenseItem } from "@/types/expense";
-import ExpenseRow from "./ExpenseRow";
+import ExpenseRow, { ExpenseCard } from "./ExpenseRow";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -12,30 +12,41 @@ interface ExpenseTableProps {
 
 const ExpenseTable = ({ items, onItemChange, onItemDelete, onAddItem }: ExpenseTableProps) => {
   return (
-    <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border">
-      <div className="overflow-x-auto">
-        <table className="w-full">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-md">
+      <div className="space-y-4 p-4 md:hidden">
+        {items.map((item) => (
+          <ExpenseCard
+            key={item.id}
+            item={item}
+            onChange={onItemChange}
+            onDelete={onItemDelete}
+          />
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[980px]">
           <thead>
             <tr className="bg-secondary">
-              <th className="p-3 text-left text-sm font-semibold text-secondary-foreground w-16">
+              <th className="w-16 p-3 text-left text-sm font-semibold text-secondary-foreground">
                 S.No
               </th>
               <th className="p-3 text-left text-sm font-semibold text-secondary-foreground">
                 Particulars
               </th>
-              <th className="p-3 text-right text-sm font-semibold text-income w-32">
-                Income (₹)
+              <th className="w-36 p-3 text-right text-sm font-semibold text-income">
+                Income (INR)
               </th>
-              <th className="p-3 text-right text-sm font-semibold text-expense w-32">
-                Expenses (₹)
+              <th className="w-36 p-3 text-right text-sm font-semibold text-expense">
+                Expenses (INR)
               </th>
-              <th className="p-3 text-left text-sm font-semibold text-secondary-foreground w-48">
+              <th className="w-56 p-3 text-left text-sm font-semibold text-secondary-foreground">
                 Bills
               </th>
               <th className="p-3 text-left text-sm font-semibold text-secondary-foreground">
                 Remarks
               </th>
-              <th className="p-3 w-12"></th>
+              <th className="w-12 p-3"></th>
             </tr>
           </thead>
           <tbody>
@@ -51,12 +62,12 @@ const ExpenseTable = ({ items, onItemChange, onItemDelete, onAddItem }: ExpenseT
         </table>
       </div>
 
-      <div className="p-4 border-t border-border bg-muted/30">
+      <div className="border-t border-border bg-muted/30 p-4">
         <Button
           type="button"
           onClick={onAddItem}
           variant="outline"
-          className="gap-2 border-dashed border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+          className="w-full gap-2 border-dashed border-primary text-primary hover:bg-primary hover:text-primary-foreground sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Add New Item

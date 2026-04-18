@@ -188,7 +188,7 @@ const Index = () => {
                   variant="ghost"
                   size="icon"
                   onClick={(e) => handleDeleteReport(report.id, e)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                  className="text-destructive transition-opacity hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -487,8 +487,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="space-y-8">
+      <div className="container mx-auto max-w-6xl px-0 py-4 sm:px-4 md:py-6">
+        <div className="space-y-6 md:space-y-8">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl md:text-5xl font-black tracking-tight">
               <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-800 bg-clip-text text-transparent">
@@ -505,15 +505,15 @@ const Index = () => {
 
           <EventHeader eventDetails={eventDetails} onChange={setEventDetails} />
 
-          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3 justify-end">
-            <Button variant="outline" onClick={handleSave} className="gap-2 text-xs md:text-sm h-9 md:h-10 px-2 md:px-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:justify-end md:gap-3">
+            <Button variant="outline" onClick={handleSave} className="h-10 w-full justify-center gap-2 px-3 text-xs md:text-sm sm:w-auto md:px-4">
               <Save className="h-3.5 w-3.5 md:h-4 md:w-4" />
               Save Draft
             </Button>
             <Button
               variant="default"
               onClick={handleSaveToDatabase}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-xs md:text-sm h-9 md:h-10 px-2 md:px-4"
+              className="h-10 w-full justify-center gap-2 bg-emerald-600 px-3 text-xs hover:bg-emerald-700 md:text-sm sm:w-auto md:px-4"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-3.5 w-3.5 md:h-4 md:w-4 animate-spin" /> : <Database className="h-3.5 w-3.5 md:h-4 md:w-4" />}
@@ -521,7 +521,7 @@ const Index = () => {
             </Button>
             <Dialog open={isSavedReportsOpen} onOpenChange={setIsSavedReportsOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 text-xs md:text-sm h-9 md:h-10 px-2 md:px-4">
+                <Button variant="outline" className="h-10 w-full justify-center gap-2 px-3 text-xs md:text-sm sm:w-auto md:px-4">
                   <FolderOpen className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   Reports
                 </Button>
@@ -533,11 +533,11 @@ const Index = () => {
                 <ScrollArea className="max-h-[60vh] pr-4">{renderReportsList()}</ScrollArea>
               </DialogContent>
             </Dialog>
-            <Button variant="outline" onClick={handleExport} className="gap-2">
+            <Button variant="outline" onClick={handleExport} className="h-10 w-full justify-center gap-2 px-3 text-xs md:text-sm sm:w-auto md:px-4">
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
-            <Button variant="default" onClick={handlePrint} className="gap-2">
+            <Button variant="default" onClick={handlePrint} className="h-10 w-full justify-center gap-2 px-3 text-xs md:text-sm sm:w-auto md:px-4">
               <Printer className="h-4 w-4" />
               Print / PDF
             </Button>
@@ -551,9 +551,9 @@ const Index = () => {
           />
 
           <div className="bg-card rounded-xl shadow-md border border-border overflow-hidden">
-            <div className="bg-secondary px-6 py-4 flex items-center justify-between">
+            <div className="bg-secondary px-4 py-4 md:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-lg font-semibold text-secondary-foreground">Saved Expense Reports (DB)</h3>
-              <Button variant="outline" size="sm" onClick={() => fetchReports()} disabled={loading} className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => fetchReports()} disabled={loading} className="w-full gap-2 sm:w-auto">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
                 Refresh
               </Button>

@@ -30,11 +30,11 @@ export function Navigation() {
 
     return (
         <nav className="bg-card border-b sticky top-0 z-50">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-2 sm:px-4">
                 <div className="flex items-center h-16 justify-between lg:justify-start lg:gap-8">
                     <div className="flex items-center gap-2 flex-shrink-0">
                         <img src={coronaLogo} alt="Corona Creative Solutions" className="h-8 w-8 object-contain" />
-                        <span className="font-bold text-base md:text-lg text-primary truncate max-w-[150px] md:max-w-none">
+                        <span className="font-bold text-base md:text-lg text-primary truncate max-w-[140px] sm:max-w-[180px] md:max-w-none">
                             Corona Creative Solutions
                         </span>
                     </div>
@@ -82,7 +82,7 @@ export function Navigation() {
                                     <span className="sr-only">Toggle menu</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-[80%] max-w-[300px] sm:w-[350px]">
+                            <SheetContent side="right" className="w-[88vw] max-w-[320px] sm:w-[350px]">
                                 <SheetHeader className="text-left pb-4 border-b">
                                     <SheetTitle className="flex items-center gap-2">
                                         <img src={coronaLogo} alt="Logo" className="h-6 w-6" />
