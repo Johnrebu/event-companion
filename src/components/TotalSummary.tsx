@@ -26,40 +26,40 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
 
   return (
     <div className="bg-card rounded-xl shadow-md border border-border overflow-hidden">
-      <div className="bg-secondary px-6 py-4">
+      <div className="bg-secondary px-4 py-3 sm:px-6 sm:py-4">
         <h3 className="text-lg font-semibold text-secondary-foreground flex items-center gap-2">
           <Calculator className="h-5 w-5" />
           Summary
         </h3>
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="space-y-4 p-4 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-income/10 rounded-lg p-4">
+          <div className="bg-income/10 rounded-lg p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-5 w-5 text-income" />
               <span className="text-sm font-medium text-muted-foreground">
                 Total Income
               </span>
             </div>
-            <p className="text-2xl md:text-3xl font-extrabold text-income tracking-tight">
+            <p className="text-xl font-extrabold tracking-tight text-income sm:text-2xl md:text-3xl">
               {formatCurrency(totalIncome)}
             </p>
           </div>
 
-          <div className="bg-expense/10 rounded-lg p-4">
+          <div className="bg-expense/10 rounded-lg p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown className="h-5 w-5 text-expense" />
               <span className="text-sm font-medium text-muted-foreground">
                 Total Expenses
               </span>
             </div>
-            <p className="text-2xl md:text-3xl font-extrabold text-expense tracking-tight">
+            <p className="text-xl font-extrabold tracking-tight text-expense sm:text-2xl md:text-3xl">
               {formatCurrency(totalExpenses)}
             </p>
           </div>
 
-          <div className={`rounded-lg p-4 ${netAmount >= 0 ? "bg-income/10" : "bg-expense/10"}`}>
+          <div className={`rounded-lg p-3 sm:p-4 ${netAmount >= 0 ? "bg-income/10" : "bg-expense/10"}`}>
             <div className="flex items-center gap-2 mb-2">
               {netAmount >= 0 ? (
                 <TrendingUp className="h-5 w-5 text-income" />
@@ -70,7 +70,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
                 Net Balance
               </span>
             </div>
-            <p className={`text-2xl md:text-3xl font-extrabold tracking-tight ${netAmount >= 0 ? "text-income" : "text-expense"}`}>
+            <p className={`text-xl font-extrabold tracking-tight sm:text-2xl md:text-3xl ${netAmount >= 0 ? "text-income" : "text-expense"}`}>
               {formatCurrency(netAmount)}
             </p>
           </div>
@@ -87,7 +87,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
                 type="number"
                 value={gstPercentage}
                 onChange={(e) => onGstChange(parseFloat(e.target.value) || 0)}
-                className="w-32"
+                className="w-full sm:w-32"
                 min="0"
                 max="100"
                 step="0.1"

@@ -109,10 +109,10 @@ const Calculator = ({ isOpen, onClose }: CalculatorProps) => {
     setWaitingForOperand(true);
   };
 
-  const buttonClass = "h-12 w-12 text-lg font-medium rounded-lg transition-all active:scale-95";
+  const buttonClass = "h-11 w-full rounded-lg text-base font-medium transition-all active:scale-95 sm:h-12 sm:w-12 sm:text-lg";
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-card rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4">
+    <div className="fixed bottom-4 left-4 right-4 z-50 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 sm:left-auto sm:right-4 sm:max-w-none">
       <div className="bg-header-gradient p-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-primary-foreground">
           <CalcIcon className="h-5 w-5" />
@@ -128,7 +128,7 @@ const Calculator = ({ isOpen, onClose }: CalculatorProps) => {
 
       <div className="p-4">
         <div className="bg-secondary rounded-lg p-4 mb-4 text-right">
-          <div className="text-3xl font-bold text-foreground truncate">
+          <div className="truncate text-2xl font-bold text-foreground sm:text-3xl">
             {display}
           </div>
           {operation && previousValue !== null && (

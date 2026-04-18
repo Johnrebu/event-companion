@@ -486,11 +486,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-6xl px-0 py-4 sm:px-4 md:py-6">
-        <div className="space-y-6 md:space-y-8">
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      <div className="container mx-auto max-w-6xl px-3 py-4 sm:px-4 md:py-6">
+        <div className="space-y-5 sm:space-y-6 md:space-y-8">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl md:text-5xl">
               <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-800 bg-clip-text text-transparent">
                 Command
               </span>{" "}

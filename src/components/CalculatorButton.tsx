@@ -9,7 +9,7 @@ const CalculatorButton = ({ onClick }: CalculatorButtonProps) => {
   return (
     <Button
       onClick={onClick}
-      className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-40 bg-header-gradient hover:opacity-90 transition-opacity"
+      className="fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-header-gradient shadow-lg transition-opacity hover:opacity-90 sm:h-14 sm:w-14"
       size="icon"
     >
       <Calculator className="h-6 w-6" />
