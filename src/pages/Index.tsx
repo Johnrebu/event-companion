@@ -13,6 +13,7 @@ import { useExpenseReports, SavedExpenseReport } from "@/hooks/useExpenseReports
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -529,6 +530,9 @@ const Index = () => {
               <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>Saved Expense Reports</DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Browse previously saved expense reports and load one into the current workspace.
+                  </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh] pr-4">{renderReportsList()}</ScrollArea>
               </DialogContent>

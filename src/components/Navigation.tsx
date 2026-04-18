@@ -8,6 +8,7 @@ import {
     Sheet,
     SheetContent,
     SheetTrigger,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
@@ -88,6 +89,9 @@ export function Navigation() {
                                         <img src={coronaLogo} alt="Logo" className="h-6 w-6" />
                                         <span>Navigation</span>
                                     </SheetTitle>
+                                    <SheetDescription className="sr-only">
+                                        Open the mobile navigation menu to move between event management pages.
+                                    </SheetDescription>
                                 </SheetHeader>
                                 <div className="flex flex-col gap-2 mt-4">
                                     {navItems.map((item) => {

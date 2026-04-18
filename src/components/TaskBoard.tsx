@@ -28,6 +28,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogFooter,
@@ -376,11 +377,14 @@ export function TaskBoard() {
                     document.body
                 )}
 
-                <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
-                    <DialogContent className="bg-[#161b22] border-gray-700 text-white shadow-2xl rounded-2xl sm:max-w-[500px]">
-                        <DialogHeader>
-                            <DialogTitle className="text-xl font-bold tracking-tight">Edit Task</DialogTitle>
-                        </DialogHeader>
+                    <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+                        <DialogContent className="bg-[#161b22] border-gray-700 text-white shadow-2xl rounded-2xl sm:max-w-[500px]">
+                            <DialogHeader>
+                                <DialogTitle className="text-xl font-bold tracking-tight">Edit Task</DialogTitle>
+                                <DialogDescription className="sr-only">
+                                    Update the selected task details, assignee, priority, and notes.
+                                </DialogDescription>
+                            </DialogHeader>
                         <div className="space-y-6 py-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-400 uppercase tracking-wider">Description</label>

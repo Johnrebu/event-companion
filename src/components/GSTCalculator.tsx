@@ -12,6 +12,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -65,6 +66,9 @@ export default function GSTCalculator({ isOpen, onClose }: GSTCalculatorProps) {
                         <Calculator className="h-6 w-6" />
                         GST Calculator
                     </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Calculate GST-inclusive and GST-exclusive totals for an entered amount.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg p-6 text-white mb-6">

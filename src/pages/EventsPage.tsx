@@ -24,6 +24,7 @@ import {
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
@@ -275,6 +276,9 @@ export default function EventsPage() {
                 <SheetContent className="sm:max-w-xl overflow-y-auto">
                     <SheetHeader>
                         <SheetTitle>{selectedEvent?.name}</SheetTitle>
+                        <SheetDescription className="sr-only">
+                            Review RSVPs and attendance details for the selected event.
+                        </SheetDescription>
                     </SheetHeader>
                     <div className="mt-6">
                         {selectedEvent && (
