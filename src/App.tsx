@@ -28,6 +28,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/expenses" element={<Index />} />
+        <Route path="/expenses/:companySlug" element={<Index />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/sop" element={<SOPPage />} />
         <Route path="/corona-sop" element={<CoronaSOPPage />} />

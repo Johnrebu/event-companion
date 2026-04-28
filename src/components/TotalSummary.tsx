@@ -2,14 +2,16 @@ import { ExpenseItem } from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingUp, TrendingDown, Calculator } from "lucide-react";
+import type { ExpenseCompany } from "@/lib/expenseCompanies";
 
 interface TotalSummaryProps {
   items: ExpenseItem[];
   gstPercentage: number;
   onGstChange: (value: number) => void;
+  company: ExpenseCompany;
 }
 
-const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) => {
+const TotalSummary = ({ items, gstPercentage, onGstChange, company }: TotalSummaryProps) => {
   const totalIncome = items.reduce((sum, item) => sum + item.income, 0);
   const totalExpenses = items.reduce((sum, item) => sum + item.expenses, 0);
   const netAmount = totalIncome - totalExpenses;
@@ -26,8 +28,8 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
 
   return (
     <div className="bg-card rounded-xl shadow-md border border-border overflow-hidden">
-      <div className="bg-secondary px-4 py-3 sm:px-6 sm:py-4">
-        <h3 className="text-lg font-semibold text-secondary-foreground flex items-center gap-2">
+      <div className={`bg-gradient-to-r ${company.screenGradientClass} px-4 py-3 sm:px-6 sm:py-4`}>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-primary-foreground">
           <Calculator className="h-5 w-5" />
           Summary
         </h3>
@@ -111,7 +113,7 @@ const TotalSummary = ({ items, gstPercentage, onGstChange }: TotalSummaryProps) 
                 </p>
               </div>
 
-              <div className="bg-header-gradient rounded-lg px-4 py-3">
+              <div className={`rounded-lg bg-gradient-to-r ${company.screenGradientClass} px-4 py-3`}>
                 <span className="text-sm text-primary-foreground/80">Grand Total</span>
                 <p className="text-xl md:text-2xl font-extrabold text-primary-foreground tracking-tight">
                   {formatCurrency(grandTotal)}

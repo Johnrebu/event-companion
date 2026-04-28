@@ -1,5 +1,11 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import {
+  getExpenseCompany,
+  getExpenseCompanyPath,
+  getExpensePageDescription,
+  getExpensePageTitle,
+} from "@/lib/expenseCompanies";
 
 const STRUCTURED_DATA_ID = "structured-data";
 
@@ -8,22 +14,16 @@ type RouteMetaConfig = {
   description: string;
   path: string;
   robots: string;
+  image?: string;
 };
 
-const ROUTE_META: Record<string, RouteMetaConfig> = {
+const STATIC_ROUTE_META: Record<string, RouteMetaConfig> = {
   "/": {
     title: "Corona Creative Solutions | Event Management",
     description:
       "Corona Creative Solutions builds and manages memorable events with streamlined planning, operations, SOPs, and budgeting support.",
     path: "/",
     robots: "index, follow",
-  },
-  "/expenses": {
-    title: "Expense Command Center | Corona Creative Solutions",
-    description:
-      "Internal expense tracking and financial reporting workspace for Corona Creative Solutions.",
-    path: "/expenses",
-    robots: "noindex, nofollow",
   },
   "/events": {
     title: "Events Dashboard | Corona Creative Solutions",
@@ -74,6 +74,36 @@ const NOT_FOUND_META: RouteMetaConfig = {
   description: "The page you are looking for could not be found.",
   path: "/",
   robots: "noindex, nofollow",
+};
+
+const getExpenseRouteMeta = (pathname: string): RouteMetaConfig | null => {
+  if (pathname === "/expenses") {
+    const company = getExpenseCompany();
+
+    return {
+      title: getExpensePageTitle(company),
+      description: getExpensePageDescription(company),
+      path: getExpenseCompanyPath(company.slug),
+      robots: "noindex, nofollow",
+      image: company.logoSrc,
+    };
+  }
+
+  const match = pathname.match(/^\/expenses(?:\/([^/]+))?\/?$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const company = getExpenseCompany(match[1]);
+
+  return {
+    title: getExpensePageTitle(company),
+    description: getExpensePageDescription(company),
+    path: getExpenseCompanyPath(company.slug),
+    robots: "noindex, nofollow",
+    image: company.logoSrc,
+  };
 };
 
 const getSiteUrl = () => {
@@ -158,7 +188,11 @@ export const RouteMeta = () => {
   useEffect(() => {
     const siteUrl = getSiteUrl();
     const defaultImage = `${siteUrl}/corona-logo.png`;
-    const meta = ROUTE_META[location.pathname] ?? NOT_FOUND_META;
+    const expenseMeta = getExpenseRouteMeta(location.pathname);
+    const meta = expenseMeta ?? STATIC_ROUTE_META[location.pathname] ?? NOT_FOUND_META;
+    const ogImage = expenseMeta?.image
+      ? new URL(expenseMeta.image, `${siteUrl}/`).toString()
+      : defaultImage;
     const canonicalUrl = new URL(meta.path, `${siteUrl}/`).toString();
     const isHomepage = location.pathname === "/";
 
@@ -174,14 +208,14 @@ export const RouteMeta = () => {
     );
     upsertMeta('meta[property="og:type"]', { property: "og:type" }, "website");
     upsertMeta('meta[property="og:url"]', { property: "og:url" }, canonicalUrl);
-    upsertMeta('meta[property="og:image"]', { property: "og:image" }, defaultImage);
+    upsertMeta('meta[property="og:image"]', { property: "og:image" }, ogImage);
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, meta.title);
     upsertMeta(
       'meta[name="twitter:description"]',
       { name: "twitter:description" },
       meta.description,
     );
-    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, defaultImage);
+    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, ogImage);
     upsertCanonical(canonicalUrl);
     upsertStructuredData(isHomepage, meta.description);
   }, [location.pathname]);

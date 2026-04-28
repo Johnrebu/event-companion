@@ -1,0 +1,20 @@
+<svg width="920" height="240" viewBox="0 0 920 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="quanticus-mark" x1="32" y1="24" x2="180" y2="176" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D28D9" />
+      <stop offset="1" stop-color="#06B6D4" />
+    </linearGradient>
+    <linearGradient id="quanticus-wordmark" x1="250" y1="70" x2="900" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0F172A" />
+      <stop offset="1" stop-color="#334155" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(24 24)">
+    <rect width="192" height="192" rx="52" fill="#F8FAFC" />
+    <circle cx="96" cy="96" r="62" stroke="url(#quanticus-mark)" stroke-width="20" />
+    <path d="M136 136L166 166" stroke="url(#quanticus-mark)" stroke-width="18" stroke-linecap="round" />
+    <circle cx="96" cy="96" r="20" fill="white" fill-opacity="0.92" />
+  </g>
+  <text x="250" y="112" fill="url(#quanticus-wordmark)" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="800" letter-spacing="8">QUANTICUS</text>
+  <text x="252" y="162" fill="#475569" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="500" letter-spacing="4">EXPENSE CLAIMS</text>
+</svg>

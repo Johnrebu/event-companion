@@ -22,4 +22,5 @@ export interface ExpenseReport {
   eventDetails: EventDetails;
   items: ExpenseItem[];
   gstPercentage: number;
+  companySlug?: string;
 }

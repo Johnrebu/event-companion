@@ -2,43 +2,45 @@ import { EventDetails } from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, MapPin, Phone } from "lucide-react";
-import moneyPechuLogo from "@/assets/moneypechu-logo.png";
+import type { ExpenseCompany } from "@/lib/expenseCompanies";
 
 interface EventHeaderProps {
   eventDetails: EventDetails;
   onChange: (details: EventDetails) => void;
+  company: ExpenseCompany;
 }
 
-const EventHeader = ({ eventDetails, onChange }: EventHeaderProps) => {
+const EventHeader = ({ eventDetails, onChange, company }: EventHeaderProps) => {
   const handleChange = (field: keyof EventDetails, value: string) => {
     onChange({ ...eventDetails, [field]: value });
   };
 
   return (
-    <div className="rounded-xl bg-header-gradient p-4 text-primary-foreground shadow-lg sm:p-6">
+    <div className={`rounded-2xl bg-gradient-to-r ${company.screenGradientClass} p-4 text-primary-foreground shadow-xl sm:p-6`}>
       <div className="mb-5 flex flex-col items-start gap-4 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="bg-primary-foreground rounded-lg p-2 shrink-0">
-          <img src={moneyPechuLogo} alt="Money Pechu" className="h-7 w-auto sm:h-8 md:h-10" />
+        <div className="shrink-0 rounded-2xl bg-primary-foreground/15 p-2 ring-1 ring-white/20">
+          <img
+            src={company.logoSrc}
+            alt={company.logoAlt}
+            className="h-7 w-auto object-contain no-auto-move sm:h-8 md:h-10"
+          />
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-lg font-extrabold tracking-tight sm:text-xl md:text-3xl">
-            <span className="bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
-              Money Pechu
-            </span>
-            {" "}
-            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 bg-clip-text text-transparent">
-              Event
+            <span className="block text-primary-foreground">{company.displayName}</span>
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.28em] text-primary-foreground/70 sm:text-xs md:text-sm">
+              Expense Claims
             </span>
           </h1>
-          <p className="text-[11px] font-medium tracking-wide text-primary-foreground/70 sm:text-xs md:text-sm">
-            PROFESSIONAL EXPENSE REPORTING
+          <p className="mt-2 max-w-3xl text-[11px] font-medium leading-6 tracking-wide text-primary-foreground/75 sm:text-xs md:text-sm">
+            Entity-specific links, branded PDF generation, manager approval routing, and accounting CC.
           </p>
         </div>
       </div>
 
-      <div className="rounded-lg bg-primary-foreground/10 p-3 backdrop-blur-sm sm:p-4">
-        <h2 className="mb-4 flex items-center gap-2 text-sm font-bold tracking-[0.16em] text-primary-foreground/60 sm:tracking-[0.2em]">
-          <span className="h-1 w-1 rounded-full bg-amber-400" />
+      <div className="rounded-2xl bg-primary-foreground/10 p-3 backdrop-blur-sm sm:p-4">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-bold tracking-[0.16em] text-primary-foreground/70 sm:tracking-[0.2em]">
+          <span className="h-1 w-1 rounded-full bg-white/80" />
           EXPENSES SUMMARY
         </h2>
 

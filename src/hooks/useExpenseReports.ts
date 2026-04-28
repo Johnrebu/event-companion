@@ -3,6 +3,7 @@ import { supabase, SUPABASE_RUNTIME_INFO } from '@/integrations/supabase/client'
 import { ExpenseItem, EventDetails } from '@/types/expense';
 import type { Json } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { DEFAULT_EXPENSE_COMPANY_SLUG, getExpenseCompany, type ExpenseCompanySlug } from '@/lib/expenseCompanies';
 
 const STORAGE_BUCKET = 'documents';
 
@@ -13,6 +14,17 @@ const createStoragePath = (reportId: string, itemId: string, fileName: string) =
 
 type StoredExpenseItem = Omit<ExpenseItem, 'billAttached'> & {
     billAttached: null;
+};
+
+type RawExpenseReport = {
+    company_slug?: string | null;
+    gst_percentage?: number | null;
+    total_income?: number | null;
+    total_expenses?: number | null;
+    items?: unknown;
+    created_at?: string | null;
+    updated_at?: string | null;
+    [key: string]: unknown;
 };
 
 const formatSupabaseError = (err: unknown, fallback: string) => {
@@ -37,6 +49,7 @@ const formatSupabaseError = (err: unknown, fallback: string) => {
 
 export interface SavedExpenseReport {
     id: string;
+    company_slug: ExpenseCompanySlug;
     event_name: string;
     event_date: string;
     venue: string | null;
@@ -45,19 +58,24 @@ export interface SavedExpenseReport {
     gst_percentage: number | null;
     total_income: number | null;
     total_expenses: number | null;
-    created_at: string;
-    updated_at: string;
+    created_at: string | null;
+    updated_at: string | null;
 }
 
-const normalizeReport = (report: any): SavedExpenseReport => ({
-    ...report,
-    gst_percentage: report.gst_percentage ?? 18,
-    total_income: report.total_income ?? 0,
-    total_expenses: report.total_expenses ?? 0,
-    items: report.items as unknown as ExpenseItem[],
-});
+const normalizeReport = (report: RawExpenseReport, fallbackCompanySlug: ExpenseCompanySlug): SavedExpenseReport => {
+    const company = getExpenseCompany(report.company_slug ?? fallbackCompanySlug);
 
-export function useExpenseReports() {
+    return {
+        ...report,
+        company_slug: company.slug,
+        gst_percentage: report.gst_percentage ?? 18,
+        total_income: report.total_income ?? 0,
+        total_expenses: report.total_expenses ?? 0,
+        items: report.items as unknown as ExpenseItem[],
+    };
+};
+
+export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPENSE_COMPANY_SLUG) {
     const [reports, setReports] = useState<SavedExpenseReport[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -70,12 +88,13 @@ export function useExpenseReports() {
             const { data, error: fetchError } = await supabase
                 .from('expense_reports')
                 .select('*')
+                .eq('company_slug', companySlug)
                 .order('created_at', { ascending: false });
 
             if (fetchError) throw fetchError;
 
             // Parse items from JSONB
-            const parsedReports = (data || []).map(normalizeReport);
+            const parsedReports = (data || []).map((report) => normalizeReport(report, companySlug));
 
             setReports(parsedReports);
             return parsedReports;
@@ -87,7 +106,7 @@ export function useExpenseReports() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [companySlug]);
 
     // Save a new report
     const saveReport = useCallback(async (
@@ -110,6 +129,7 @@ export function useExpenseReports() {
             const { data, error: insertError } = await supabase
                 .from('expense_reports')
                 .insert({
+                    company_slug: companySlug,
                     event_name: eventDetails.eventName || 'Untitled Event',
                     event_date: eventDetails.date,
                     venue: eventDetails.venue || null,
@@ -207,7 +227,7 @@ export function useExpenseReports() {
         } finally {
             setLoading(false);
         }
-    }, [fetchReports]);
+    }, [fetchReports, companySlug]);
 
     // Get report by ID
     const getReportById = useCallback(async (id: string) => {
@@ -217,11 +237,12 @@ export function useExpenseReports() {
                 .from('expense_reports')
                 .select('*')
                 .eq('id', id)
+                .eq('company_slug', companySlug)
                 .single();
 
             if (fetchError) throw fetchError;
 
-            return normalizeReport(data);
+            return normalizeReport(data, companySlug);
         } catch (err) {
             const message = formatSupabaseError(err, 'Failed to fetch report');
             toast.error(message);
@@ -229,7 +250,7 @@ export function useExpenseReports() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [companySlug]);
 
     // Delete a report
     const deleteReport = useCallback(async (id: string) => {
@@ -239,6 +260,7 @@ export function useExpenseReports() {
                 .from('expense_reports')
                 .select('items')
                 .eq('id', id)
+                .eq('company_slug', companySlug)
                 .single();
 
             const { data: documentRows } = await supabase
@@ -278,7 +300,8 @@ export function useExpenseReports() {
             const { error: deleteError } = await supabase
                 .from('expense_reports')
                 .delete()
-                .eq('id', id);
+                .eq('id', id)
+                .eq('company_slug', companySlug);
 
             if (deleteError) throw deleteError;
 
@@ -292,7 +315,7 @@ export function useExpenseReports() {
         } finally {
             setLoading(false);
         }
-    }, [fetchReports]);
+    }, [fetchReports, companySlug]);
 
     return {
         reports,

@@ -53,6 +53,7 @@ export type Database = {
       expense_reports: {
         Row: {
           created_at: string | null
+          company_slug: string
           event_date: string
           event_name: string
           gst_percentage: number | null
@@ -67,6 +68,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          company_slug?: string
           event_date: string
           event_name: string
           gst_percentage?: number | null
@@ -81,6 +83,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          company_slug?: string
           event_date?: string
           event_name?: string
           gst_percentage?: number | null

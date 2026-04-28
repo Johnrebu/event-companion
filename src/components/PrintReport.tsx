@@ -1,15 +1,16 @@
 import { forwardRef } from "react";
 import { ExpenseItem, EventDetails } from "@/types/expense";
-import coronaLogo from "@/assets/corona-logo.png";
+import type { ExpenseCompany } from "@/lib/expenseCompanies";
 
 interface PrintReportProps {
   eventDetails: EventDetails;
   items: ExpenseItem[];
   gstPercentage: number;
+  company: ExpenseCompany;
 }
 
 const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
-  ({ eventDetails, items, gstPercentage }, ref) => {
+  ({ eventDetails, items, gstPercentage, company }, ref) => {
     const totalIncome = items.reduce((sum, item) => sum + item.income, 0);
     const totalExpenses = items.reduce((sum, item) => sum + item.expenses, 0);
     const netAmount = totalIncome - totalExpenses;
@@ -39,9 +40,9 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
         {/* Header */}
         <div className="flex items-center justify-between border-b-2 border-gray-800 pb-4 mb-6">
           <div className="flex items-center gap-4">
-            <img src={coronaLogo} alt="Corona Creative Solutions" className="h-16 w-auto" />
+            <img src={company.logoSrc} alt={company.logoAlt} className="h-16 w-auto no-auto-move" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Corona Creative Solutions</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{company.displayName}</h1>
               <p className="text-sm text-gray-600">Event Expense Report</p>
             </div>
           </div>
@@ -146,7 +147,7 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
               <p>For any queries, please contact the event management team.</p>
             </div>
             <div className="text-right">
-              <p>Corona Creative Solutions</p>
+              <p>{company.footerLine}</p>
               <p>Event Management Division</p>
             </div>
           </div>
