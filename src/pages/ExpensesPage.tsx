@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import EventHeader from "@/components/EventHeader";
 import ExpenseTable from "@/components/ExpenseTable";
 import TotalSummary from "@/components/TotalSummary";
@@ -22,7 +23,6 @@ import { buildExpensePrintHtml } from "@/lib/expensePrint";
 import {
   DEFAULT_EXPENSE_COMPANY_SLUG,
   EXPENSE_COMPANIES,
-  EXPENSE_WORKFLOW_STEPS,
   getExpenseCompany,
   getExpenseCompanyPath,
   getExpenseDraftStorageKey,
@@ -69,6 +69,13 @@ const createDefaultEventDetails = (): EventDetails => ({
   date: new Date().toISOString().split("T")[0],
   venue: "",
   phone: "",
+  preparedBy: "Balakumar",
+  reportingManager: "Aishwarya",
+});
+
+const normalizeEventDetails = (details?: Partial<EventDetails>): EventDetails => ({
+  ...createDefaultEventDetails(),
+  ...details,
 });
 
 const createInitialState = (storageKey: string): ExpenseDraftState => {
@@ -79,7 +86,7 @@ const createInitialState = (storageKey: string): ExpenseDraftState => {
       const data = JSON.parse(saved);
 
       return {
-        eventDetails: data.eventDetails || createDefaultEventDetails(),
+        eventDetails: normalizeEventDetails(data.eventDetails),
         items:
           data.items?.length > 0
             ? data.items.map((item: ExpenseItem) => ({
@@ -159,6 +166,8 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       ["Date:", eventDetails.date],
       ["Venue:", eventDetails.venue],
       ["Phone:", eventDetails.phone],
+      ["Prepared By:", eventDetails.preparedBy],
+      ["Reporting Manager:", eventDetails.reportingManager],
       [],
       ["S.No", "Particulars", "Income", "Expenses", "Remarks", "Bill Name", "Bill URL"],
       ...items.map((item) => [
@@ -239,6 +248,30 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
   const handleAddItem = () => {
     setItems((current) => [...current, createEmptyItem(current.length + 1)]);
   };
+
+  const handleEventDetailChange = (field: keyof EventDetails, value: string) => {
+    setEventDetails((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const workflowSteps = [
+    {
+      label: "Prepared by",
+      field: "preparedBy" as const,
+      placeholder: "Prepared by name",
+    },
+    {
+      label: "Reporting manager",
+      field: "reportingManager" as const,
+      placeholder: "Manager name",
+    },
+    {
+      label: "Accounting copy",
+      value: "Auto CC",
+    },
+  ];
 
   const entityCards = EXPENSE_COMPANIES.map((entity) => {
     const isActive = entity.slug === company.slug;
@@ -326,7 +359,7 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{entityCards}</div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {EXPENSE_WORKFLOW_STEPS.map((step) => (
+              {workflowSteps.map((step) => (
                 <div
                   key={step.label}
                   className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"
@@ -335,7 +368,16 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
                     <Workflow className="h-4 w-4" />
                     {step.label}
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-white">{step.value}</p>
+                  {"field" in step ? (
+                    <Input
+                      value={eventDetails[step.field]}
+                      onChange={(event) => handleEventDetailChange(step.field, event.target.value)}
+                      placeholder={step.placeholder}
+                      className="mt-2 h-9 border-white/20 bg-white/15 text-sm font-semibold text-white placeholder:text-white/45 focus:border-white"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm font-semibold text-white">{step.value}</p>
+                  )}
                 </div>
               ))}
             </div>

@@ -50,8 +50,22 @@ export const buildExpensePrintHtml = ({
   const netBalance = totalIncome - totalExpenses;
   const gstAmount = (totalExpenses * gstPercentage) / 100;
   const grandTotal = totalExpenses + gstAmount;
+  const preparedBy = eventDetails.preparedBy || "Balakumar";
+  const reportingManager = eventDetails.reportingManager || "Aishwarya";
 
-  const workflowCards = EXPENSE_WORKFLOW_STEPS.map(
+  const workflowSteps = EXPENSE_WORKFLOW_STEPS.map((step) => {
+    if (step.label === "Prepared by") {
+      return { ...step, value: preparedBy };
+    }
+
+    if (step.label === "Reporting manager") {
+      return { ...step, value: reportingManager };
+    }
+
+    return step;
+  });
+
+  const workflowCards = workflowSteps.map(
     (step) => `
       <div class="workflow-card">
         <span>${escapeHtml(step.label)}</span>
@@ -447,7 +461,7 @@ export const buildExpensePrintHtml = ({
                 <strong>${grandTotalFormatted}</strong>
               </div>
               <div class="summary-note">
-                Prepared by Balakumar, routed to Aishwarya Ma'am for approval, and CCed to accounting automatically.
+                Prepared by ${escapeHtml(preparedBy)}, routed to ${escapeHtml(reportingManager)} for approval, and CCed to accounting automatically.
               </div>
             </div>
           </div>
@@ -458,11 +472,11 @@ export const buildExpensePrintHtml = ({
           <div class="signatures">
             <div class="signature">
               Prepared by
-              <strong>Balakumar</strong>
+              <strong>${escapeHtml(preparedBy)}</strong>
             </div>
             <div class="signature">
               Approved by
-              <strong>Aishwarya</strong>
+              <strong>${escapeHtml(reportingManager)}</strong>
             </div>
             <div class="signature">
               CC to

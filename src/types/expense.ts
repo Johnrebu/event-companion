@@ -16,6 +16,8 @@ export interface EventDetails {
   date: string;
   venue: string;
   phone: string;
+  preparedBy: string;
+  reportingManager: string;
 }
 
 export interface ExpenseReport {
