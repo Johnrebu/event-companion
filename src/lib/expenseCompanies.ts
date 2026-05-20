@@ -73,10 +73,10 @@ export const EXPENSE_COMPANIES = [
     routeHint: "Entity-specific access link",
     metaDescription:
       "Quanticus expense claims workspace with branded access, automated PDF generation, and manager-to-accounting routing.",
-    screenGradientClass: "from-violet-600 via-fuchsia-500 to-cyan-500",
-    printAccentColor: "#7c3aed",
-    printAccentSoftColor: "#f5f3ff",
-    printBorderColor: "#a78bfa",
+    screenGradientClass: "from-blue-700 via-sky-700 to-blue-500",
+    printAccentColor: "#1764a8",
+    printAccentSoftColor: "#eff6ff",
+    printBorderColor: "#60a5fa",
     footerLine: "Quanticus",
   },
 ] as const satisfies readonly ExpenseCompany[];
@@ -123,4 +123,3 @@ export const getExpensePageTitle = (company: ExpenseCompany) =>
   `Expense Command Center | ${company.displayName}`;
 
 export const getExpensePageDescription = (company: ExpenseCompany) => company.metaDescription;
-
