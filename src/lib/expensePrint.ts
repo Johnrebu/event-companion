@@ -39,6 +39,8 @@ const formatDate = (value: string) => {
   });
 };
 
+const formatTextValue = (value?: string) => value?.trim() || "-";
+
 export const buildExpensePrintHtml = ({
   company,
   eventDetails,
@@ -50,8 +52,8 @@ export const buildExpensePrintHtml = ({
   const netBalance = totalIncome - totalExpenses;
   const gstAmount = (totalExpenses * gstPercentage) / 100;
   const grandTotal = totalExpenses + gstAmount;
-  const preparedBy = eventDetails.preparedBy || "Balakumar";
-  const reportingManager = eventDetails.reportingManager || "Aishwarya";
+  const preparedBy = formatTextValue(eventDetails.preparedBy);
+  const reportingManager = formatTextValue(eventDetails.reportingManager);
 
   const workflowSteps = EXPENSE_WORKFLOW_STEPS.map((step) => {
     if (step.label === "Prepared by") {

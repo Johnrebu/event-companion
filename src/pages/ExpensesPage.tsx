@@ -69,8 +69,8 @@ const createDefaultEventDetails = (): EventDetails => ({
   date: new Date().toISOString().split("T")[0],
   venue: "",
   phone: "",
-  preparedBy: "Balakumar",
-  reportingManager: "Aishwarya",
+  preparedBy: "",
+  reportingManager: "",
 });
 
 const normalizeEventDetails = (details?: Partial<EventDetails>): EventDetails => ({
