@@ -93,6 +93,7 @@ const createInitialState = (storageKey: string): ExpenseDraftState => {
                 ...item,
                 billAttached: null,
                 billFileName: item.billFileName || "",
+                billUrl: item.billUrl || undefined,
               }))
             : [createEmptyItem(1), createEmptyItem(2), createEmptyItem(3)],
         gstPercentage: data.gstPercentage ?? 18,
@@ -130,6 +131,8 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       items: items.map((item) => ({
         ...item,
         billAttached: null,
+        billFileName: item.billFileName || "",
+        billUrl: item.billUrl || undefined,
       })),
       gstPercentage,
       savedAt: new Date().toISOString(),
@@ -145,6 +148,8 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       items: items.map((item) => ({
         ...item,
         billAttached: null,
+        billFileName: item.billFileName || "",
+        billUrl: item.billUrl || undefined,
       })),
       gstPercentage,
       savedAt: new Date().toISOString(),
@@ -163,39 +168,55 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
 
     const csvContent = [
       [`EXPENSE REPORT - ${company.displayName} - ${eventDetails.eventName || "Untitled"}`],
-      ["Date:", eventDetails.date],
-      ["Venue:", eventDetails.venue],
-      ["Phone:", eventDetails.phone],
-      ["Prepared By:", eventDetails.preparedBy],
-      ["Reporting Manager:", eventDetails.reportingManager],
+      ["Generated On:", new Date().toLocaleString("en-IN")],
+      ["Event Name:", eventDetails.eventName || "N/A"],
+      ["Date:", eventDetails.date || "N/A"],
+      ["Venue:", eventDetails.venue || "N/A"],
+      ["Phone:", eventDetails.phone || "N/A"],
+      ["Prepared By:", eventDetails.preparedBy || "N/A"],
+      ["Reporting Manager:", eventDetails.reportingManager || "N/A"],
       [],
-      ["S.No", "Particulars", "Income", "Expenses", "Remarks", "Bill Name", "Bill URL"],
-      ...items.map((item) => [
-        item.sNo,
-        item.particulars,
-        item.income,
-        item.expenses,
-        item.remarks,
-        item.billFileName || "No",
-        item.billUrl || "",
-      ]),
+      [
+        "S.No",
+        "Particulars",
+        "Income (INR)",
+        "Expenses (INR)",
+        "Bill Attached",
+        "Bill File Name",
+        "Bill Link / Data",
+        "Remarks",
+      ],
+      ...items.map((item) => {
+        const hasBill = Boolean(item.billFileName || item.billUrl || item.billAttached);
+        return [
+          item.sNo,
+          item.particulars || "-",
+          item.income,
+          item.expenses,
+          hasBill ? "Yes" : "No",
+          item.billFileName || "-",
+          item.billUrl || (hasBill ? item.billFileName : "-"),
+          item.remarks || "-",
+        ];
+      }),
       [],
-      ["", "Total Income:", totalIncome],
-      ["", "Total Expenses:", totalExpenses],
-      ["", `GST @ ${gstPercentage}%:`, gstAmount],
-      ["", "Grand Total:", grandTotal],
+      ["", "", "Total Income:", totalIncome],
+      ["", "", "Total Expenses:", totalExpenses],
+      ["", "", `GST @ ${gstPercentage}%:`, gstAmount],
+      ["", "", "Grand Total:", grandTotal],
     ]
       .map((row) => row.map((cell) => escapeCsvCell(cell as string | number)).join(","))
-      .join("\n");
+      .join("\r\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `expense-report-${company.slug}-${sanitizeFileNamePart(eventDetails.eventName || "event")}-${eventDetails.date}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
-    toast.success("Report exported successfully!");
+    toast.success("Excel / CSV report exported successfully!");
   };
 
   const handlePrint = () => {
@@ -410,7 +431,7 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
               className="h-10 w-full justify-center gap-2 px-3 text-xs md:text-sm sm:w-auto md:px-4"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              Export Excel / CSV
             </Button>
             <Button
               variant="default"

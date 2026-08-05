@@ -76,6 +76,10 @@ export const buildExpensePrintHtml = ({
     `,
   ).join("");
 
+  const attachedItems = items.filter(
+    (item) => Boolean(item.billFileName || item.billUrl || item.billAttached),
+  );
+
   const tableRows = items
     .map(
       (item, index) => `
@@ -84,12 +88,120 @@ export const buildExpensePrintHtml = ({
           <td>${escapeHtml(item.particulars || "-")}</td>
           <td class="right income">${item.income > 0 ? escapeHtml(formatCurrency(item.income)) : "-"}</td>
           <td class="right expense">${item.expenses > 0 ? escapeHtml(formatCurrency(item.expenses)) : "-"}</td>
-          <td>${escapeHtml(item.billFileName || "-")}</td>
+          <td>
+            ${
+              item.billFileName
+                ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 12px; font-size: 11px;">
+                    📎 ${escapeHtml(item.billFileName)}
+                  </span>`
+                : '<span style="color: #94a3b8;">-</span>'
+            }
+          </td>
           <td>${escapeHtml(item.remarks || "-")}</td>
         </tr>
       `,
     )
     .join("");
+
+  const attachedBillsHtml =
+    attachedItems.length > 0
+      ? `
+        <section class="section" style="page-break-before: auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h2 class="section-title" style="margin: 0;">Attached Bills & Supporting Receipts</h2>
+            <span style="font-size: 12px; font-weight: 700; color: ${company.printAccentColor}; background: ${company.printAccentSoftColor}; padding: 4px 12px; border-radius: 20px; border: 1px solid ${company.printBorderColor};">
+              ${attachedItems.length} Attached ${attachedItems.length === 1 ? "Document" : "Documents"}
+            </span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            ${attachedItems
+              .map((item) => {
+                const isImage =
+                  item.billUrl?.startsWith("data:image/") ||
+                  /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.billFileName);
+
+                const isPdf =
+                  item.billUrl?.startsWith("data:application/pdf") ||
+                  /\.pdf$/i.test(item.billFileName);
+
+                return `
+                  <div style="border: 1px solid #cbd5e1; border-radius: 16px; background: #ffffff; padding: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); page-break-inside: avoid;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 14px;">
+                      <div>
+                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: ${company.printAccentColor};">
+                          Item #${item.sNo} Attachment
+                        </span>
+                        <h3 style="margin: 2px 0 0; font-size: 16px; font-weight: 700; color: #0f172a;">
+                          ${escapeHtml(item.particulars || "Expense Particulars")}
+                        </h3>
+                      </div>
+                      <div style="text-align: right;">
+                        <div style="font-size: 14px; font-weight: 700; color: #b91c1c;">
+                          ${item.expenses > 0 ? escapeHtml(formatCurrency(item.expenses)) : "-"}
+                        </div>
+                        <div style="font-size: 12px; color: #64748b;">
+                          📎 ${escapeHtml(item.billFileName || "Attached Bill")}
+                        </div>
+                      </div>
+                    </div>
+
+                    ${
+                      isImage && item.billUrl
+                        ? `
+                      <div style="text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 12px;">
+                        <img src="${item.billUrl}" alt="${escapeHtml(item.billFileName)}" style="max-width: 100%; max-height: 540px; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                      </div>
+                    `
+                        : isPdf && item.billUrl
+                          ? `
+                      <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 16px; text-align: center;">
+                        <div style="font-size: 36px; margin-bottom: 6px;">📄</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #0369a1;">
+                          ${escapeHtml(item.billFileName)}
+                        </div>
+                        <div style="font-size: 12px; color: #0284c7; margin-top: 4px;">
+                          PDF document attached to this claim item.
+                        </div>
+                        <div style="margin-top: 12px;">
+                          <a href="${item.billUrl}" download="${escapeHtml(item.billFileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                            Download / View PDF Attachment
+                          </a>
+                        </div>
+                      </div>
+                    `
+                          : `
+                      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                          <div style="font-size: 28px;">📎</div>
+                          <div>
+                            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
+                              ${escapeHtml(item.billFileName || "Attached Document")}
+                            </div>
+                            <div style="font-size: 12px; color: #64748b;">
+                              Supporting document attached to expense item
+                            </div>
+                          </div>
+                        </div>
+                        ${
+                          item.billUrl
+                            ? `
+                          <a href="${item.billUrl}" download="${escapeHtml(item.billFileName || "attached-bill")}" style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                            View Document
+                          </a>
+                        `
+                            : ""
+                        }
+                      </div>
+                    `
+                    }
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        </section>
+      `
+      : "";
 
   const generatedOn = escapeHtml(new Date().toLocaleString("en-IN"));
   const totalExpensesFormatted = escapeHtml(formatCurrency(totalExpenses));
@@ -468,6 +580,8 @@ export const buildExpensePrintHtml = ({
             </div>
           </div>
         </section>
+
+        ${attachedBillsHtml}
 
         <section class="section">
           <h2 class="section-title">Approval Trail</h2>

@@ -3,8 +3,14 @@ import anshulLogo from "@/assets/company-logos/anshul-a-gupta-associates-logo.pn
 import coronaLogo from "@/assets/corona-logo.png";
 import quanticusLogo from "@/assets/company-logos/quanticus-logo.svg";
 
+export type ExpenseCompanySlug =
+  | "corona-creative"
+  | "aionion-capital"
+  | "anshul-a-gupta-associates"
+  | "quanticus";
+
 export interface ExpenseCompany {
-  slug: string;
+  slug: ExpenseCompanySlug;
   displayName: string;
   legalName: string;
   logoSrc: string;
@@ -80,8 +86,6 @@ export const EXPENSE_COMPANIES = [
     footerLine: "Quanticus",
   },
 ] as const satisfies readonly ExpenseCompany[];
-
-export type ExpenseCompanySlug = (typeof EXPENSE_COMPANIES)[number]["slug"];
 
 export const DEFAULT_EXPENSE_COMPANY_SLUG: ExpenseCompanySlug = "corona-creative";
 

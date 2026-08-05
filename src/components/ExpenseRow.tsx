@@ -26,55 +26,69 @@ const ExpenseBillField = ({
   onFileChange,
   onRemoveFile,
   buttonClassName,
-}: ExpenseBillFieldProps) => (
-  <div className="flex items-center gap-2">
-    <input
-      ref={fileInputRef}
-      type="file"
-      onChange={onFileChange}
-      className="hidden"
-      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-    />
-    {item.billFileName ? (
-      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm">
-        <FileText className="h-4 w-4 shrink-0 text-primary" />
-        <span className="min-w-0 flex-1 truncate text-accent-foreground">
-          {item.billFileName}
-        </span>
-        {item.billUrl && (
-          <a
-            href={item.billUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="shrink-0 text-primary transition-colors hover:text-primary/80"
-            title="Open uploaded file"
+}: ExpenseBillFieldProps) => {
+  const isImage =
+    item.billUrl?.startsWith("data:image/") ||
+    /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.billFileName);
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={onFileChange}
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.webp"
+      />
+      {item.billFileName ? (
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-accent/60 p-1.5 px-2.5 text-sm shadow-sm transition-all hover:border-primary/40">
+          {isImage && item.billUrl ? (
+            <img
+              src={item.billUrl}
+              alt="Bill thumbnail"
+              className="h-7 w-7 shrink-0 rounded object-cover border border-border"
+            />
+          ) : (
+            <FileText className="h-4 w-4 shrink-0 text-primary" />
+          )}
+          <span className="min-w-0 flex-1 truncate font-medium text-accent-foreground">
+            {item.billFileName}
+          </span>
+          {item.billUrl && (
+            <a
+              href={item.billUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 rounded p-1 text-primary transition-colors hover:bg-primary/10 hover:text-primary"
+              title="Open / Preview attached bill"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={onRemoveFile}
+            className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Remove attached bill"
           >
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        )}
-        <button
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <Button
           type="button"
-          onClick={onRemoveFile}
-          className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
-          aria-label="Remove attached bill"
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          className={cn("gap-2 border-dashed hover:border-primary hover:text-primary", buttonClassName)}
         >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    ) : (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-        className={cn("gap-2", buttonClassName)}
-      >
-        <Paperclip className="h-4 w-4" />
-        Attach Bill
-      </Button>
-    )}
-  </div>
-);
+          <Paperclip className="h-4 w-4" />
+          Attach Bill
+        </Button>
+      )}
+    </div>
+  );
+};
 
 const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,13 +100,18 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onChange({
-        ...item,
-        billAttached: file,
-        billFileName: file.name,
-        billUrl: undefined,
-        billStoragePath: undefined,
-      });
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        onChange({
+          ...item,
+          billAttached: file,
+          billFileName: file.name,
+          billUrl: dataUrl,
+          billStoragePath: undefined,
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -187,13 +206,18 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onChange({
-        ...item,
-        billAttached: file,
-        billFileName: file.name,
-        billUrl: undefined,
-        billStoragePath: undefined,
-      });
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        onChange({
+          ...item,
+          billAttached: file,
+          billFileName: file.name,
+          billUrl: dataUrl,
+          billStoragePath: undefined,
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
