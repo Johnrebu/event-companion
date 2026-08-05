@@ -188,6 +188,11 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       ],
       ...items.map((item) => {
         const hasBill = Boolean(item.billFileName || item.billUrl || item.billAttached);
+        const isDataUrl = item.billUrl?.startsWith("data:");
+        const billDataLink = isDataUrl
+          ? "Local Attachment (See PDF/System)"
+          : item.billUrl || (hasBill ? item.billFileName : "-");
+
         return [
           item.sNo,
           item.particulars || "-",
@@ -195,7 +200,7 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
           item.expenses,
           hasBill ? "Yes" : "No",
           item.billFileName || "-",
-          item.billUrl || (hasBill ? item.billFileName : "-"),
+          billDataLink,
           item.remarks || "-",
         ];
       }),
