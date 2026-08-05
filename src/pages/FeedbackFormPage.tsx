@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
+  Paperclip,
+  Eye,
+  Image as ImageIcon,
   AlertCircle,
   Building2,
   Download,
@@ -44,6 +47,9 @@ type ReimbursementItem = {
   invoiceAmount: string;
   remarks: string;
   companyName: string;
+  billAttached: boolean | null;
+  billFileName: string;
+  billUrl?: string;
 };
 
 type SavedDraft = {
@@ -100,6 +106,8 @@ const createExpenseItem = (overrides: Partial<ReimbursementItem> = {}): Reimburs
   invoiceAmount: "",
   remarks: "",
   companyName: DEFAULT_COMPANY_NAME,
+  billAttached: null,
+  billFileName: "",
   ...overrides,
 });
 
@@ -195,6 +203,9 @@ const normalizeItem = (item?: Partial<ReimbursementItem>) => ({
   invoiceAmount: item?.invoiceAmount ?? "",
   remarks: item?.remarks ?? "",
   companyName: item?.companyName ?? DEFAULT_COMPANY_NAME,
+  billAttached: item?.billAttached ?? null,
+  billFileName: item?.billFileName ?? "",
+  billUrl: item?.billUrl,
 });
 
 const getEmptyDraft = (): SavedDraft => ({
@@ -220,7 +231,9 @@ const hasDraftContent = (form: ReimbursementForm, items: ReimbursementItem[]) =>
       item.description.trim() ||
       item.invoiceAmount.trim() ||
       item.remarks.trim() ||
-      item.companyName.trim() !== DEFAULT_COMPANY_NAME,
+      item.companyName.trim() !== DEFAULT_COMPANY_NAME ||
+      item.billFileName ||
+      item.billUrl,
   );
 
 const getInitialDraft = (): SavedDraft => {
@@ -258,6 +271,7 @@ const getInitialDraft = (): SavedDraft => {
 };
 
 const buildReimbursementPrintHtml = (form: ReimbursementForm, items: ReimbursementItem[]) => {
+  const attachedItems = items.filter((item) => Boolean(item.billUrl || item.billFileName));
   const total = items.reduce((sum, item) => sum + amountFromString(item.invoiceAmount), 0);
   const tableRows = items
     .map(
@@ -267,7 +281,7 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
           <td>${escapeHtml(formatDisplayDate(item.expenseDate))}</td>
           <td>${escapeHtml(item.description || "-")}</td>
           <td class="amount">${escapeHtml(formatCurrency(amountFromString(item.invoiceAmount)))}</td>
-          <td>${escapeHtml(item.remarks || "-")}</td>
+          <td>${escapeHtml(item.remarks || "-")} ${item.billFileName ? `📎` : ""}</td>
           <td>${escapeHtml(item.companyName || "-")}</td>
         </tr>`,
     )
@@ -614,6 +628,108 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
             </div>
           </section>
 
+          ${
+            attachedItems.length > 0
+              ? `
+          <section class="section" style="page-break-before: always;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <h2 class="section-title" style="margin: 0;">Attached Bills & Supporting Receipts</h2>
+              <span style="font-size: 12px; font-weight: 700; color: #0b5695; background: #f0f9ff; padding: 4px 12px; border-radius: 20px; border: 1px solid #bae6fd;">
+                ${attachedItems.length} Attached ${attachedItems.length === 1 ? "Document" : "Documents"}
+              </span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              ${attachedItems
+                .map((item) => {
+                  const itemIndex = items.findIndex((i) => i.id === item.id) + 1;
+                  const isImage =
+                    item.billUrl?.startsWith("data:image/") ||
+                    /\\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.billFileName);
+
+                  const isPdf =
+                    item.billUrl?.startsWith("data:application/pdf") ||
+                    /\\.pdf$/i.test(item.billFileName);
+
+                  return `
+                    <div style="border: 1px solid #cbd5e1; border-radius: 16px; background: #ffffff; padding: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); page-break-inside: avoid;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 14px;">
+                        <div>
+                          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #0b5695;">
+                            Item #${itemIndex} Attachment
+                          </span>
+                          <h3 style="margin: 2px 0 0; font-size: 16px; font-weight: 700; color: #0f172a;">
+                            ${escapeHtml(item.description || "Expense Description")}
+                          </h3>
+                        </div>
+                        <div style="text-align: right;">
+                          <div style="font-size: 14px; font-weight: 700; color: #991b1b;">
+                            ${amountFromString(item.invoiceAmount) > 0 ? escapeHtml(formatCurrency(amountFromString(item.invoiceAmount))) : "-"}
+                          </div>
+                          <div style="font-size: 12px; color: #64748b;">
+                            📎 ${escapeHtml(item.billFileName || "Attached Bill")}
+                          </div>
+                        </div>
+                      </div>
+
+                      ${
+                        isImage && item.billUrl
+                          ? `
+                        <div style="text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 12px;">
+                          <img src="${item.billUrl}" alt="${escapeHtml(item.billFileName)}" style="max-width: 100%; max-height: 540px; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                        </div>
+                      `
+                          : isPdf && item.billUrl
+                            ? `
+                        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 16px; text-align: center;">
+                          <div style="font-size: 36px; margin-bottom: 6px;">📄</div>
+                          <div style="font-size: 14px; font-weight: 700; color: #0369a1;">
+                            ${escapeHtml(item.billFileName)}
+                          </div>
+                          <div style="font-size: 12px; color: #0284c7; margin-top: 4px;">
+                            PDF document attached to this claim item.
+                          </div>
+                          <div style="margin-top: 12px;">
+                            <a href="${item.billUrl}" download="${escapeHtml(item.billFileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                              Download / View PDF Attachment
+                            </a>
+                          </div>
+                        </div>
+                      `
+                            : `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+                          <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 28px;">📎</div>
+                            <div>
+                              <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
+                                ${escapeHtml(item.billFileName || "Attached Document")}
+                              </div>
+                              <div style="font-size: 12px; color: #64748b;">
+                                Supporting document attached to expense item
+                              </div>
+                            </div>
+                          </div>
+                          ${
+                            item.billUrl
+                              ? `
+                            <a href="${item.billUrl}" download="${escapeHtml(item.billFileName || "attached-bill")}" style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                              View Document
+                            </a>
+                          `
+                              : ""
+                          }
+                        </div>
+                      `
+                      }
+                    </div>
+                  `;
+                })
+                .join("")}
+            </div>
+          </section>
+          `
+              : ""
+          }
+
           <footer class="footer">
             <div>
               <div>This is a system-generated reimbursement bill.</div>
@@ -735,6 +851,44 @@ export default function FeedbackFormPage() {
     }
 
     setItems((current) => current.filter((item) => item.id !== itemId));
+  };
+
+  const handleFileUpload = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setItems((current) =>
+        current.map((item) =>
+          item.id === itemId
+            ? { ...item, billAttached: true, billFileName: file.name, billUrl: dataUrl }
+            : item,
+        ),
+      );
+      toast.success("Bill attached successfully");
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read file");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeAttachment = (itemId: string) => {
+    setItems((current) =>
+      current.map((item) =>
+        item.id === itemId
+          ? { ...item, billAttached: null, billFileName: "", billUrl: undefined }
+          : item,
+      ),
+    );
+    toast.success("Attachment removed");
   };
 
   const validateClaim = () => {
@@ -1023,6 +1177,7 @@ export default function FeedbackFormPage() {
                     <TableHead className="min-w-[160px]">Invoice Amount</TableHead>
                     <TableHead className="min-w-[180px]">Remarks If Any</TableHead>
                     <TableHead className="min-w-[220px]">Company Name</TableHead>
+                    <TableHead className="min-w-[140px]">Attach Bill</TableHead>
                     <TableHead className="w-[72px] text-right">Remove</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1078,6 +1233,75 @@ export default function FeedbackFormPage() {
                           placeholder={DEFAULT_COMPANY_NAME}
                         />
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
+                          {item.billUrl || item.billFileName ? (
+                            <div className="flex w-full items-center justify-between gap-2 overflow-hidden">
+                              <div className="flex items-center gap-1.5 overflow-hidden">
+                                {item.billUrl?.startsWith("data:image/") ||
+                                /\\.(jpg|jpeg|png|webp|gif)$/i.test(item.billFileName || "") ? (
+                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded bg-slate-100">
+                                    <ImageIcon className="h-3 w-3 text-slate-400" />
+                                  </div>
+                                ) : (
+                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-blue-50">
+                                    <FileText className="h-3 w-3 text-blue-500" />
+                                  </div>
+                                )}
+                                <span className="truncate text-xs font-medium text-slate-700">
+                                  {item.billFileName || "Attached"}
+                                </span>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                {item.billUrl && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-slate-400 hover:text-blue-600"
+                                    onClick={() => {
+                                      const win = window.open();
+                                      if (win) {
+                                        if (item.billUrl?.startsWith("data:application/pdf")) {
+                                          win.document.write(
+                                            `<iframe src="\${item.billUrl}" width="100%" height="100%" style="border:none;"></iframe>`,
+                                          );
+                                        } else {
+                                          win.document.write(
+                                            `<img src="\${item.billUrl}" style="max-width:100%;" />`,
+                                          );
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-slate-400 hover:text-red-500"
+                                  onClick={() => removeAttachment(item.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <label className="flex w-full cursor-pointer items-center justify-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900">
+                              <Paperclip className="h-3.5 w-3.5" />
+                              <span>Attach</span>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*,.pdf"
+                                onChange={(e) => handleFileUpload(item.id, e)}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           type="button"
@@ -1096,7 +1320,7 @@ export default function FeedbackFormPage() {
                   <TableRow>
                     <TableCell colSpan={3}>Total</TableCell>
                     <TableCell className="font-bold">{formatCurrency(totalAmount)}</TableCell>
-                    <TableCell colSpan={3} className="text-right text-muted-foreground">
+                    <TableCell colSpan={4} className="text-right text-muted-foreground">
                       {meaningfulItems.length} claim line(s)
                     </TableCell>
                   </TableRow>
