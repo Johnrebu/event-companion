@@ -49,19 +49,47 @@ const features = [
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
-      <section className="relative flex min-h-[100svh] flex-col items-center justify-center px-4 pb-20 pt-16 sm:px-6 sm:pb-24 sm:pt-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
-
-        <div
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
-            backgroundSize: "64px 64px",
-          }}
+    <div className="relative min-h-screen overflow-x-hidden bg-[#080B14] text-white">
+      {/* Atmospheric Event Imagery Background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden opacity-[0.15] mix-blend-luminosity saturate-50">
+        <img
+          src="https://images.unsplash.com/photo-1540039155732-611422b40d16?w=1200&q=80"
+          alt=""
+          className="absolute -left-[10%] top-[5%] h-[60vh] w-[40vw] -rotate-6 rounded-[100px] object-cover blur-[4px] sm:h-[80vh] sm:w-[50vw]"
         />
+        <img
+          src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1200&q=80"
+          alt=""
+          className="absolute -right-[5%] top-[15%] h-[70vh] w-[45vw] rotate-12 rounded-[150px] object-cover blur-[6px] sm:h-[90vh] sm:w-[55vw]"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80"
+          alt=""
+          className="absolute -bottom-[15%] left-[15%] h-[50vh] w-[70vw] -rotate-12 rounded-[80px] object-cover blur-[5px] sm:h-[70vh] sm:w-[60vw]"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=1200&q=80"
+          alt=""
+          className="absolute -bottom-[10%] -right-[10%] h-[40vh] w-[40vw] rotate-6 rounded-[100px] object-cover blur-[4px] sm:h-[50vh] sm:w-[50vw]"
+        />
+      </div>
+
+      {/* Creative Glowing Orbs Background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-[20%] -top-[10%] h-[70vw] max-h-[800px] w-[70vw] max-w-[800px] rounded-full bg-gradient-to-br from-violet-600/40 via-fuchsia-600/30 to-transparent blur-[120px]" />
+        <div className="absolute -bottom-[10%] -right-[20%] h-[80vw] max-h-[900px] w-[80vw] max-w-[900px] rounded-full bg-gradient-to-tl from-amber-500/30 via-orange-600/20 to-transparent blur-[130px]" />
+        <div className="absolute left-[10%] top-[40%] h-[50vw] max-h-[600px] w-[50vw] max-w-[600px] rounded-full bg-gradient-to-tr from-blue-600/30 via-teal-500/20 to-transparent blur-[110px]" />
+      </div>
+
+      {/* Noise Texture Overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-25 mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <section className="relative z-10 flex min-h-[100svh] flex-col items-center justify-center px-4 pb-20 pt-16 sm:px-6 sm:pb-24 sm:pt-20">
 
         <div className="relative z-10 mx-auto w-full max-w-5xl text-center">
           <div className="mb-6 flex justify-center sm:mb-8">
