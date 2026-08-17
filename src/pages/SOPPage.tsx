@@ -35,6 +35,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { MoneyPechuBlueprintCard } from "@/components/MoneyPechuBlueprintCard";
 
 interface SOPTask {
     id: string;
@@ -264,6 +265,19 @@ export default function SOPPage() {
         }));
     };
 
+    const handleJumpToCategory = (categoryId: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [categoryId]: true,
+        }));
+        setTimeout(() => {
+            const el = document.getElementById(`sop-cat-${categoryId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }, 50);
+    };
+
     const calculateProgress = (tasks: SOPTask[]) => {
         if (tasks.length === 0) return 0;
         const completed = tasks.filter(t => taskState[t.id]).length;
@@ -277,8 +291,9 @@ export default function SOPPage() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-white pb-12 print:p-0 print:bg-white">
-            <div className="container mx-auto px-4 py-8 max-w-4xl print:max-w-none print:px-0">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 print:mb-8">
+            <div className="container mx-auto px-4 py-8 max-w-4xl print:max-w-none print:px-0 space-y-8">
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 print:mb-8">
                     <div className="space-y-4">
                         <div>
                             <h1 className="text-4xl font-extrabold tracking-tight text-primary mb-2">
@@ -338,6 +353,12 @@ export default function SOPPage() {
                     </Card>
                 </div>
 
+                {/* Visual Event Blueprint Section */}
+                <div className="no-print">
+                    <MoneyPechuBlueprintCard onJumpToCategory={handleJumpToCategory} />
+                </div>
+
+                {/* SOP Categories List */}
                 <div className="grid gap-6 print:gap-4">
                     {SOP_METADATA.map(category => {
                         const progress = calculateProgress(category.tasks);
@@ -347,9 +368,10 @@ export default function SOPPage() {
 
                         return (
                             <Card
+                                id={`sop-cat-${category.id}`}
                                 key={category.id}
                                 className={cn(
-                                    "overflow-hidden transition-all duration-300 border-l-4 print:border-l-2 print:shadow-none",
+                                    "overflow-hidden transition-all duration-300 border-l-4 print:border-l-2 print:shadow-none scroll-mt-20",
                                     isFullyCompleted ? "border-l-green-500 bg-green-50/5 print:border-l-black" : "border-l-primary/40 print:border-l-gray-300"
                                 )}
                             >

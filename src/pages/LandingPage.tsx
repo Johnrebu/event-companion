@@ -6,8 +6,10 @@ import {
   FileSpreadsheet,
   TrendingUp,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import coronaLogo from "@/assets/corona-logo.png";
+import blueprintImg from "@/assets/money-pechu-blueprint.jpg";
 
 const features = [
   {
@@ -156,6 +158,46 @@ const LandingPage = () => {
                 <ArrowRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30 transition-all group-hover:translate-x-1 group-hover:text-white/80 sm:bottom-8 sm:right-8" />
               </Link>
             ))}
+          </div>
+
+          {/* Featured Money Pechu Blueprint Banner */}
+          <div className="mt-8 overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 p-6 sm:p-8 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-3 max-w-xl text-left">
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  Featured Visual Framework
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  Money Pechu: <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">The Ultimate Event Blueprint</span>
+                </h3>
+                <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
+                  Explore the complete operational infographic detailing Phase 1 Pre-Event Admin & Logistics, Phase 2 Production, and the critical Sunday execution timeline.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    to="/sop"
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400 hover:gap-3"
+                  >
+                    <span>View Interactive Blueprint & SOP</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="w-full md:w-5/12 max-w-sm rounded-2xl overflow-hidden border border-amber-500/20 shadow-xl bg-slate-950/80 group">
+                <Link to="/sop" className="block relative">
+                  <img
+                    src={blueprintImg}
+                    alt="Money Pechu Event Blueprint Preview"
+                    className="w-full h-48 object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex items-end p-3">
+                    <span className="text-xs font-semibold text-amber-300">Click to view full resolution →</span>
+                  </div>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

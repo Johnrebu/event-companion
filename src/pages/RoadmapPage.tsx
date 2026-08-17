@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
     ArrowRight,
@@ -26,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 type IconItem = {
     icon: LucideIcon;
@@ -719,27 +721,44 @@ export default function RoadmapPage() {
                     })}
 
                     <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-                        {eventPortfolio.map((item) => (
-                            <Card key={item.title} className="border-white/10 bg-slate-900/55">
-                                <CardHeader className="space-y-4">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300">
-                                            <item.icon className="h-5 w-5" />
+                        {eventPortfolio.map((item) => {
+                            const isMoneyPechu = item.title.toLowerCase().includes("money pechu");
+                            return (
+                                <Card key={item.title} className={cn("border-white/10 bg-slate-900/55 transition-all", isMoneyPechu && "border-amber-500/30 hover:border-amber-500/60 bg-gradient-to-b from-slate-900/80 to-amber-950/20")}>
+                                    <CardHeader className="space-y-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300">
+                                                <item.icon className="h-5 w-5" />
+                                            </div>
+                                            <Badge variant="outline" className={cn("border-white/15 text-slate-300", isMoneyPechu && "border-amber-500/40 text-amber-300")}>
+                                                {item.category}
+                                            </Badge>
                                         </div>
-                                        <Badge variant="outline" className="border-white/15 text-slate-300">
-                                            {item.category}
-                                        </Badge>
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-xl text-white">{item.title}</CardTitle>
-                                        <CardDescription className="mt-2 text-slate-400">Frequency: {item.frequency}</CardDescription>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm leading-7 text-slate-300">{item.description}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                        <div>
+                                            <CardTitle className="text-xl text-white flex items-center justify-between">
+                                                <span>{item.title}</span>
+                                            </CardTitle>
+                                            <CardDescription className="mt-2 text-slate-400">Frequency: {item.frequency}</CardDescription>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        <p className="text-sm leading-7 text-slate-300">{item.description}</p>
+                                        {isMoneyPechu && (
+                                            <div className="pt-2 border-t border-white/5">
+                                                <Link
+                                                    to="/sop"
+                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 transition-colors"
+                                                >
+                                                    <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                                                    View Event Blueprint & SOP
+                                                    <ArrowRight className="h-3 w-3" />
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </div>
                 </section>
 
