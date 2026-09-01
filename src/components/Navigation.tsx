@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FileSpreadsheet, CalendarDays, ClipboardCheck, Zap, Home, Menu, Percent, TrendingUp, HandCoins } from "lucide-react";
+import { FileSpreadsheet, CalendarDays, ClipboardCheck, Zap, Home, Menu, Percent, TrendingUp, HandCoins, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coronaLogo from "@/assets/corona-logo.png";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { useState } from "react";
 
 const navItems = [
     { path: "/", label: "Home", icon: Home },
+    { path: "/ascend", label: "The Ascend", icon: Sparkles },
     { path: "/expenses", label: "Expenses", icon: FileSpreadsheet },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/sop", label: "Pre-Event", icon: ClipboardCheck },

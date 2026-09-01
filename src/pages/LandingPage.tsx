@@ -13,6 +13,13 @@ import blueprintImg from "@/assets/money-pechu-blueprint.jpg";
 
 const features = [
   {
+    icon: Sparkles,
+    title: "The Aionion Ascend",
+    description: "VIP Client Registration & Live Gate Check-in Desk",
+    link: "/ascend",
+    gradient: "from-amber-500/30 to-amber-600/10",
+  },
+  {
     icon: FileSpreadsheet,
     title: "Expenses",
     description: "Track income and expenses with precision",
@@ -117,13 +124,23 @@ const LandingPage = () => {
             <span className="text-gray-500">Event management, reimagined.</span>
           </p>
 
-          <Link
-            to="/expenses"
-            className="group inline-flex w-full max-w-[220px] items-center justify-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3.5 text-base font-medium backdrop-blur-sm transition-all duration-300 hover:border-amber-500/30 hover:bg-white/10 hover:shadow-[0_0_30px_rgba(251,191,36,0.2)] sm:w-auto sm:max-w-none sm:px-8 sm:py-4 sm:text-lg"
-          >
-            <span>Get Started</span>
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Link
+              to="/ascend"
+              className="group inline-flex w-full max-w-[260px] items-center justify-center gap-2 rounded-full border border-amber-500/40 bg-amber-500 px-6 py-3.5 text-base font-bold text-slate-950 shadow-[0_0_30px_rgba(251,191,36,0.3)] transition-all duration-300 hover:bg-amber-400 hover:scale-[1.02] sm:w-auto sm:max-w-none sm:px-8 sm:py-4 sm:text-lg"
+            >
+              <Sparkles className="h-5 w-5" />
+              <span>The Aionion Ascend</span>
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <Link
+              to="/expenses"
+              className="group inline-flex w-full max-w-[220px] items-center justify-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3.5 text-base font-medium backdrop-blur-sm transition-all duration-300 hover:border-amber-500/30 hover:bg-white/10 hover:shadow-[0_0_30px_rgba(251,191,36,0.2)] sm:w-auto sm:max-w-none sm:px-8 sm:py-4 sm:text-lg"
+            >
+              <span>Explore Dashboard</span>
+            </Link>
+          </div>
         </div>
 
         <div className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 animate-bounce flex-col items-center gap-2 text-gray-600 sm:flex">
@@ -222,6 +239,9 @@ const LandingPage = () => {
             </span>
           </div>
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+            <Link to="/ascend" className="text-sm font-semibold text-amber-400 hover:text-amber-300 transition-colors">
+              The Ascend
+            </Link>
             <Link to="/expenses" className="text-sm text-gray-500 transition-colors hover:text-white">
               Expenses
             </Link>

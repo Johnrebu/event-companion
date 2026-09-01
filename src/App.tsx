@@ -12,6 +12,8 @@ import SOPPage from "./pages/SOPPage";
 import CoronaSOPPage from "./pages/CoronaSOPPage";
 import RoadmapPage from "./pages/RoadmapPage";
 import FeedbackFormPage from "./pages/FeedbackFormPage";
+import AscendPage from "./pages/AscendPage";
+import AscendRegisterPage from "./pages/AscendRegisterPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,11 @@ const AppContent = () => {
       {!isLandingPage && <Navigation />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/ascend" element={<AscendPage />} />
+        <Route path="/ascend-register" element={<AscendRegisterPage />} />
+        <Route path="/ascend-admin" element={<AscendPage />} />
+        <Route path="/the-aionion-ascend" element={<AscendPage />} />
+        <Route path="/the-aionion-ascend/register" element={<AscendRegisterPage />} />
         <Route path="/expenses" element={<Index />} />
         <Route path="/expenses/:companySlug" element={<Index />} />
         <Route path="/events" element={<EventsPage />} />
