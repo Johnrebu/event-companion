@@ -21,6 +21,8 @@ export interface AscendAttendee {
     rmCode?: string;
     rmName?: string;
     rmTeam?: string;
+    aumRange?: string;
+    secondaryContact?: string;
     session: AscendSession;
     checkInStatus: CheckInStatus;
     checkInTimestamp?: string; // ISO string when checked in

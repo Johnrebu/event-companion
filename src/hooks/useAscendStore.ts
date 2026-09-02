@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { AscendAttendee, RegistrationFormData, AscendSession, CheckInStatus } from '@/types/ascend';
+import { parseAscendRow } from '@/utils/ascendExcelParser';
 
 const STORAGE_KEY = 'aionion-ascend-attendees-v1';
 
@@ -267,73 +268,13 @@ export function useAscendStore() {
         const errors: string[] = [];
 
         rows.forEach((row, index) => {
-            // Flexible header key lookup
-            const getVal = (...keys: string[]): string => {
-                for (const k of keys) {
-                    for (const rowKey of Object.keys(row)) {
-                        if (rowKey.trim().toLowerCase() === k.toLowerCase()) {
-                            const val = row[rowKey];
-                            return val !== undefined && val !== null ? String(val).trim() : '';
-                        }
-                    }
-                }
-                return '';
-            };
-
-            const clientName = getVal('Client Name', 'Name', 'Client', 'Guest Name');
-            const clientCode = getVal('Client Code', 'Code', 'Client ID', 'ID');
-            const contactNumber = getVal('Contact Number', 'Client Phone Number', 'Client Phone Number / Mobile', 'Mobile Number', 'Phone Number', 'Phone', 'Mobile');
-            const email = getVal('Email ID', 'Email', 'Email Address');
-            const guestName = getVal('Accompanying Guest Name', 'Guest Name', 'Accompanying Guest', 'Partner Name');
-            const guestMobile = getVal('Accompanying Guest Mobile', 'Guest Mobile', 'Guest Phone');
-            const rmName = getVal('RM Name', 'Relationship Manager', 'RM');
-            const rmCode = getVal('RM Code', 'RM ID');
-            const rmTeam = getVal('RM Team', 'RM Team / Branch', 'Branch', 'Team');
-            const sessionRaw = getVal('Session', 'Session Type', 'Gathering');
-            const statusRaw = getVal('Check-in Status', 'Check-in', 'Status');
-            const remarks = getVal('Remarks', 'Notes', 'RM Remarks');
-
-            if (!clientName && !clientCode) {
-                // Skip empty row
-                return;
+            const result = parseAscendRow(row, index);
+            if (result.error) {
+                errors.push(result.error);
             }
-
-            if (!clientName) {
-                errors.push(`Row ${index + 2}: Missing Client Name`);
-                return;
+            if (result.attendee) {
+                importedList.push(result.attendee);
             }
-
-            const hasGuest = Boolean(guestName && guestName.length > 0);
-            let session: AscendSession = 'Morning Gathering';
-            if (sessionRaw.toLowerCase().includes('evening') || sessionRaw.toLowerCase().includes('night') || sessionRaw.toLowerCase().includes('dinner')) {
-                session = 'Evening Gathering';
-            } else if (sessionRaw.toLowerCase().includes('general') || sessionRaw.toLowerCase().includes('all')) {
-                session = 'General';
-            }
-
-            const id = `ascend-import-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-            const code = clientCode.toUpperCase() || `K${Math.floor(100000 + Math.random() * 900000)}`;
-
-            importedList.push({
-                id,
-                clientName,
-                clientCode: code,
-                contactNumber: contactNumber.replace(/\D/g, '').slice(-10) || '9840000000',
-                email: email || `${code.toLowerCase()}@client.aionioncap.com`,
-                hasAccompanyingGuest: hasGuest,
-                accompanyingGuestName: hasGuest ? guestName : undefined,
-                accompanyingGuestMobile: hasGuest && guestMobile ? guestMobile : undefined,
-                numberOfAttendees: hasGuest ? 2 : 1,
-                rmCode: rmCode || undefined,
-                rmName: rmName || undefined,
-                rmTeam: rmTeam || undefined,
-                session,
-                checkInStatus: statusRaw.toLowerCase().includes('check') || statusRaw.toLowerCase().includes('attend') ? 'Checked-in' : 'Registered',
-                checkInTimestamp: statusRaw.toLowerCase().includes('check') ? new Date().toISOString() : undefined,
-                remarks: remarks || (rmName || rmTeam ? `RM: ${[rmName, rmTeam].filter(Boolean).join(' - ')}` : undefined),
-                registeredAt: new Date().toISOString(),
-                qrPayload: `ASCEND-${code}-${id}`,
-            });
         });
 
         if (mode === 'replace') {
@@ -358,8 +299,10 @@ export function useAscendStore() {
             'SESSION': a.session,
             'CHECK-IN STATUS': a.checkInStatus,
             'CHECK-IN TIME': a.checkInTimestamp ? new Date(a.checkInTimestamp).toLocaleString('en-IN') : '-',
+            'RM CODE': a.rmCode || '-',
             'RM NAME': a.rmName || '-',
             'RM TEAM / BRANCH': a.rmTeam || '-',
+            'AUM RANGE': a.aumRange || '-',
             'REMARKS': a.remarks || '-',
         }));
 
@@ -376,8 +319,10 @@ export function useAscendStore() {
             { wch: 20 }, // Session
             { wch: 16 }, // Status
             { wch: 22 }, // Check-in Time
+            { wch: 14 }, // RM Code
             { wch: 20 }, // RM Name
             { wch: 20 }, // RM Team
+            { wch: 20 }, // AUM Range
             { wch: 30 }, // Remarks
         ];
 
@@ -390,59 +335,55 @@ export function useAscendStore() {
     const downloadSampleTemplate = useCallback(() => {
         const sampleRows = [
             {
-                'Client Name': 'Priya Ramanathan',
-                'Client Code': 'K000773',
-                'Client Phone Number / Mobile': '9840123456',
-                'Email': 'priya.ramanathan@example.com',
-                'Accompanying Guest Name': 'Arvind Ramanathan',
-                'Accompanying Guest Mobile': '9840987654',
-                'RM Name': 'Suresh Balakrishnan',
-                'RM Team': 'Royapettah 5',
-                'Session': 'Morning Gathering',
-                'Remarks': 'VIP Seat Request',
+                'Client Name': 'Sathish Bhargavi',
+                'ClientPhoneNumer': '9962542048',
+                'ClientEmailId': 'dsathish2u@gmail.com',
+                'ClientCode': 'B000591',
+                'Which session would you prefer to attend?': 'Evening Session - Timing: 6:00 PM - 9:00 PM',
+                'RM Code': 'ACM0154',
+                'RM Name': 'Alamelu S',
+                'RM Team': 'Royapettah 1',
+                'AUM range': '50 Lakhs to 1 Crore',
             },
             {
-                'Client Name': 'Rajesh Narayanan',
-                'Client Code': 'K000842',
-                'Client Phone Number / Mobile': '9940567890',
-                'Email': 'rajesh.narayanan@example.com',
-                'Accompanying Guest Name': '',
-                'Accompanying Guest Mobile': '',
-                'RM Name': 'Ananya Deshmukh',
-                'RM Team': 'Alwarpet',
-                'Session': 'Morning Gathering',
-                'Remarks': 'Confirmed via call',
+                'Client Name': 'VIGNESHRAJ JAIRAJ',
+                'ClientPhoneNumer': '9445126676',
+                'ClientEmailId': 'vigneshraj.4@gmail.com',
+                'ClientCode': 'V001134',
+                'Which session would you prefer to attend?': 'Morning Session - Timing: 10:00 AM - 1:00 PM',
+                'RM Code': 'ACM0154',
+                'RM Name': 'Hari Haran',
+                'RM Team': 'Coimbatore',
+                'AUM range': 'Up to 1 Lakh',
             },
             {
-                'Client Name': 'Dr. Meenakshi Sundaram',
-                'Client Code': 'K000915',
-                'Client Phone Number / Mobile': '9884123890',
-                'Email': 'meenakshi.s@example.com',
-                'Accompanying Guest Name': 'Dr. R. Sundaram',
-                'Accompanying Guest Mobile': '9884567123',
-                'RM Name': 'Karthik Subramanian',
-                'RM Team': 'Anna Nagar',
-                'Session': 'Evening Gathering',
-                'Remarks': 'Panelist',
+                'Client Name': 'Prashanth R / R Renuka',
+                'ClientPhoneNumer': '8681954435/9940050467',
+                'ClientEmailId': 'renu1972car@gmail.com',
+                'ClientCode': 'R000909',
+                'Which session would you prefer to attend?': 'Morning Session - Timing: 10:00 AM - 1:00 PM',
+                'RM Code': 'ACM0190',
+                'RM Name': 'Santhosh U',
+                'RM Team': 'Coimbatore',
+                'AUM range': '50 Lakhs to 1 Crore',
             },
         ];
 
         const worksheet = XLSX.utils.json_to_sheet(sampleRows);
         worksheet['!cols'] = [
-            { wch: 22 },
-            { wch: 14 },
             { wch: 26 },
+            { wch: 24 },
             { wch: 28 },
-            { wch: 24 },
-            { wch: 24 },
+            { wch: 14 },
+            { wch: 45 },
+            { wch: 14 },
             { wch: 20 },
             { wch: 18 },
-            { wch: 20 },
-            { wch: 22 },
+            { wch: 24 },
         ];
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Import Template');
-        XLSX.writeFile(workbook, 'The_Aionion_Ascend_Sample_Import_Template.xlsx');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Responses Data');
+        XLSX.writeFile(workbook, 'The_Aionion_Ascend_Responses_Template.xlsx');
     }, []);
 
     // Reset back to initial seed data
