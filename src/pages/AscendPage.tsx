@@ -42,6 +42,8 @@ export default function AscendPage() {
         toggleCheckIn,
         checkInByCodeOrPayload,
         deleteAttendee,
+        deleteMultipleAttendees,
+        clearAll,
         importFromParsedRows,
         exportToExcel,
         downloadSampleTemplate,
@@ -172,6 +174,8 @@ export default function AscendPage() {
                                 stats={stats}
                                 onToggleCheckIn={toggleCheckIn}
                                 onDeleteAttendee={deleteAttendee}
+                                onDeleteMultiple={deleteMultipleAttendees}
+                                onClearAll={clearAll}
                                 onOpenRegisterModal={() => setIsManualRegisterOpen(true)}
                                 onOpenImportModal={() => setIsImportModalOpen(true)}
                                 onOpenScannerModal={() => setIsScannerModalOpen(true)}

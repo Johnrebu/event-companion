@@ -21,10 +21,13 @@ import {
     SlidersHorizontal,
     MoreVertical,
     FileText,
+    AlertTriangle,
+    CheckSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select,
     SelectContent,
@@ -69,6 +72,8 @@ interface AscendCheckInConsoleProps {
     };
     onToggleCheckIn: (id: string) => AscendAttendee | null;
     onDeleteAttendee: (id: string) => void;
+    onDeleteMultiple?: (ids: string[]) => void;
+    onClearAll?: () => void;
     onOpenRegisterModal: () => void;
     onOpenImportModal: () => void;
     onOpenScannerModal: () => void;
@@ -82,6 +87,8 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
     stats,
     onToggleCheckIn,
     onDeleteAttendee,
+    onDeleteMultiple,
+    onClearAll,
     onOpenRegisterModal,
     onOpenImportModal,
     onOpenScannerModal,
@@ -94,6 +101,9 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
     const [sessionFilter, setSessionFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+    const [isClearAllOpen, setIsClearAllOpen] = useState(false);
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     // Filtered list
     const filteredAttendees = useMemo(() => {
@@ -134,17 +144,59 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
     const confirmDelete = () => {
         if (deleteTargetId) {
             onDeleteAttendee(deleteTargetId);
+            setSelectedIds(prev => prev.filter(id => id !== deleteTargetId));
             toast.success("Guest removed from register.");
             setDeleteTargetId(null);
         }
     };
 
+    const confirmBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        if (onDeleteMultiple) {
+            onDeleteMultiple(selectedIds);
+        } else {
+            selectedIds.forEach(id => onDeleteAttendee(id));
+        }
+        toast.success(`Deleted ${selectedIds.length} guests from the register.`);
+        setSelectedIds([]);
+        setIsBulkDeleteOpen(false);
+    };
+
+    const confirmClearAll = () => {
+        if (onClearAll) {
+            onClearAll();
+            setSelectedIds([]);
+            toast.success("All registered guests deleted successfully.");
+        }
+        setIsClearAllOpen(false);
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allVisibleIds = filteredAttendees.map(a => a.id);
+            setSelectedIds(allVisibleIds);
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(i => i !== id));
+        }
+    };
+
+    const isAllVisibleSelected = filteredAttendees.length > 0 && filteredAttendees.every(a => selectedIds.includes(a.id));
+    const isSomeSelected = selectedIds.length > 0 && !isAllVisibleSelected;
+
     return (
         <div className="space-y-6">
-            {/* STATS OVERVIEW CARDS */}
+            {/* EXECUTIVE METRICS DASHBOARD */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {/* Total Expected Attendees */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5 backdrop-blur-md relative overflow-hidden">
+                {/* Total Registered */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5 backdrop-blur-md">
                     <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
                         <span>Total Expected</span>
                         <Users className="h-4 w-4 text-amber-400" />
@@ -253,18 +305,19 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                                 <SelectItem value="all">All Sessions</SelectItem>
                                 <SelectItem value="Morning Gathering">Morning Gathering</SelectItem>
                                 <SelectItem value="Evening Gathering">Evening Gathering</SelectItem>
+                                <SelectItem value="General">General</SelectItem>
                             </SelectContent>
                         </Select>
 
-                        {/* Check-in Status Filter */}
+                        {/* Status Filter */}
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="w-[140px] bg-slate-950/80 border-slate-800 text-slate-200 text-xs h-10 rounded-xl">
                                 <SelectValue placeholder="All Status" />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-900 border-slate-800 text-white text-xs">
                                 <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="Registered">Registered</SelectItem>
                                 <SelectItem value="Checked-in">Checked-in</SelectItem>
-                                <SelectItem value="Registered">Pending Check-in</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -307,8 +360,8 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                     </div>
                 </div>
 
-                {/* Sub-bar: Results count & Quick reset actions */}
-                <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
+                {/* Sub-bar: Results count, Bulk selection bar & Quick reset/clear actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3 gap-3">
                     <div>
                         Showing <span className="font-bold text-white">{filteredAttendees.length}</span> of{' '}
                         <span className="font-bold text-white">{attendees.length}</span> registered guests
@@ -326,14 +379,50 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Selected bulk action button */}
+                        {selectedIds.length > 0 && (
+                            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-lg">
+                                <span className="text-amber-300 font-bold text-xs">
+                                    {selectedIds.length} Selected
+                                </span>
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => setIsBulkDeleteOpen(true)}
+                                    className="h-6 px-2 text-[11px] font-bold bg-rose-600 hover:bg-rose-500 text-white gap-1"
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                    Delete Selected
+                                </Button>
+                                <button
+                                    onClick={() => setSelectedIds([])}
+                                    className="text-[11px] text-slate-400 hover:text-white"
+                                >
+                                    Deselect
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Reset Demo Data Button */}
                         <button
                             onClick={onResetDemoData}
-                            className="text-[11px] text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-colors"
-                            title="Reset dataset with default corporate guests"
+                            className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg bg-slate-950 border border-slate-800"
+                            title="Reset dataset with sample corporate guests"
                         >
-                            <RotateCcw className="h-3 w-3" />
+                            <RotateCcw className="h-3 w-3 text-slate-400" />
                             Reset Demo Data
+                        </button>
+
+                        {/* Delete All Guests Button */}
+                        <button
+                            onClick={() => setIsClearAllOpen(true)}
+                            disabled={attendees.length === 0}
+                            className="text-[11px] text-rose-400 hover:text-rose-300 disabled:opacity-40 disabled:hover:text-rose-400 flex items-center gap-1 transition-colors px-2.5 py-1 rounded-lg bg-rose-950/20 border border-rose-900/40 hover:bg-rose-950/40"
+                            title="Delete all guests and clear register"
+                        >
+                            <Trash2 className="h-3 w-3 text-rose-400" />
+                            Delete All Guests
                         </button>
                     </div>
                 </div>
@@ -346,6 +435,14 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                         {/* Standard Corporate Columns Header */}
                         <thead>
                             <tr className="border-b border-slate-800 bg-slate-950/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th className="py-3.5 px-3 text-center w-10">
+                                    <Checkbox
+                                        checked={isAllVisibleSelected ? true : isSomeSelected ? 'indeterminate' : false}
+                                        onCheckedChange={(c) => handleSelectAll(Boolean(c))}
+                                        aria-label="Select all guests"
+                                        className="border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:text-slate-950"
+                                    />
+                                </th>
                                 <th className="py-3.5 px-4">NAME</th>
                                 <th className="py-3.5 px-3">CLIENT CODE</th>
                                 <th className="py-3.5 px-3">CONTACT NUMBER</th>
@@ -361,26 +458,40 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                         <tbody className="divide-y divide-slate-800/60 text-xs">
                             {filteredAttendees.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} className="py-12 text-center text-slate-500 space-y-2">
+                                    <td colSpan={10} className="py-12 text-center text-slate-500 space-y-2">
                                         <Users className="h-8 w-8 mx-auto opacity-40 text-slate-400" />
                                         <p className="text-sm font-medium text-slate-400">No matching guests found</p>
                                         <p className="text-xs text-slate-600">
-                                            Try adjusting your search criteria or register a new client.
+                                            Try adjusting your search criteria, import an Excel file, or register a new client.
                                         </p>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredAttendees.map((attendee) => {
                                     const isCheckedIn = attendee.checkInStatus === 'Checked-in';
+                                    const isSelected = selectedIds.includes(attendee.id);
+
                                     return (
                                         <tr
                                             key={attendee.id}
                                             className={`transition-colors ${
-                                                isCheckedIn
+                                                isSelected
+                                                    ? 'bg-amber-500/10 hover:bg-amber-500/15'
+                                                    : isCheckedIn
                                                     ? 'bg-emerald-950/10 hover:bg-emerald-950/20'
                                                     : 'hover:bg-slate-800/40'
                                             }`}
                                         >
+                                            {/* 0. CHECKBOX */}
+                                            <td className="py-3 px-3 text-center">
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onCheckedChange={(c) => handleSelectOne(attendee.id, Boolean(c))}
+                                                    aria-label={`Select ${attendee.clientName}`}
+                                                    className="border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:text-slate-950"
+                                                />
+                                            </td>
+
                                             {/* 1. NAME */}
                                             <td className="py-3 px-4">
                                                 <div className="font-bold text-white text-sm flex items-center gap-1.5">
@@ -443,8 +554,8 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                                                     variant="outline"
                                                     className={`text-[11px] font-medium ${
                                                         attendee.session === 'Morning Gathering'
-                                                            ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-                                                            : 'border-violet-500/40 bg-violet-500/10 text-violet-300'
+                                                             ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                                             : 'border-violet-500/40 bg-violet-500/10 text-violet-300'
                                                     }`}
                                                 >
                                                     {attendee.session}
@@ -493,13 +604,18 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                                                         RM: {[attendee.rmName, attendee.rmTeam].filter(Boolean).join(' • ')}
                                                     </span>
                                                 ) : null}
+                                                {attendee.aumRange ? (
+                                                    <span className="block text-[10px] text-amber-400/90 font-mono">
+                                                        AUM: {attendee.aumRange}
+                                                    </span>
+                                                ) : null}
                                                 {attendee.remarks ? (
                                                     <span className="block text-[11px] text-slate-400 truncate">
                                                         {attendee.remarks}
                                                     </span>
-                                                ) : (
+                                                ) : !attendee.rmTeam && !attendee.rmName && !attendee.aumRange ? (
                                                     <span className="text-slate-600">-</span>
-                                                )}
+                                                ) : null}
                                             </td>
 
                                             {/* 9. ACTIONS */}
@@ -564,7 +680,7 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                 </div>
             </div>
 
-            {/* Delete Confirmation Modal */}
+            {/* Delete Single Attendee Modal */}
             <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
                 <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
                     <AlertDialogHeader>
@@ -582,6 +698,58 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                             className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
                         >
                             Remove Guest
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Bulk Delete Selected Modal */}
+            <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+                <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
+                    <AlertDialogHeader>
+                        <div className="flex items-center gap-2 text-rose-400 font-bold">
+                            <AlertTriangle className="h-5 w-5" />
+                            <AlertDialogTitle>Delete {selectedIds.length} Selected Guests?</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-slate-400 text-xs pt-1">
+                            You are about to delete <strong className="text-white">{selectedIds.length}</strong> selected guests from the register. Their passes will be revoked.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmBulkDelete}
+                            className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                        >
+                            Delete {selectedIds.length} Guests
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Clear All Guests Modal */}
+            <AlertDialog open={isClearAllOpen} onOpenChange={setIsClearAllOpen}>
+                <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
+                    <AlertDialogHeader>
+                        <div className="flex items-center gap-2 text-rose-400 font-bold">
+                            <Trash2 className="h-5 w-5" />
+                            <AlertDialogTitle>Delete ALL Registered Guests?</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-slate-400 text-xs pt-1">
+                            This will completely clear the guest register (all <strong className="text-white">{attendees.length}</strong> records). You can import your Excel file again whenever needed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmClearAll}
+                            className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                        >
+                            Yes, Clear All Guests
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -259,6 +259,12 @@ export function useAscendStore() {
         setAttendees((prev) => prev.filter((item) => item.id !== id));
     }, []);
 
+    // Delete multiple attendees
+    const deleteMultipleAttendees = useCallback((ids: string[]) => {
+        const idSet = new Set(ids);
+        setAttendees((prev) => prev.filter((item) => !idSet.has(item.id)));
+    }, []);
+
     // Bulk Import Excel / CSV
     const importFromParsedRows = useCallback((
         rows: Array<Record<string, any>>,
@@ -446,6 +452,7 @@ export function useAscendStore() {
         checkInByCodeOrPayload,
         updateAttendee,
         deleteAttendee,
+        deleteMultipleAttendees,
         importFromParsedRows,
         exportToExcel,
         downloadSampleTemplate,
