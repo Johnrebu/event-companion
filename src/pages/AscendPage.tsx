@@ -175,7 +175,6 @@ export default function AscendPage() {
                                 onToggleCheckIn={toggleCheckIn}
                                 onDeleteAttendee={deleteAttendee}
                                 onDeleteMultiple={deleteMultipleAttendees}
-                                onClearAll={clearAll}
                                 onOpenRegisterModal={() => setIsManualRegisterOpen(true)}
                                 onOpenImportModal={() => setIsImportModalOpen(true)}
                                 onOpenScannerModal={() => setIsScannerModalOpen(true)}

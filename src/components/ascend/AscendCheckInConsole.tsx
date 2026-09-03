@@ -73,7 +73,6 @@ interface AscendCheckInConsoleProps {
     onToggleCheckIn: (id: string) => AscendAttendee | null;
     onDeleteAttendee: (id: string) => void;
     onDeleteMultiple?: (ids: string[]) => void;
-    onClearAll?: () => void;
     onOpenRegisterModal: () => void;
     onOpenImportModal: () => void;
     onOpenScannerModal: () => void;
@@ -88,7 +87,6 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
     onToggleCheckIn,
     onDeleteAttendee,
     onDeleteMultiple,
-    onClearAll,
     onOpenRegisterModal,
     onOpenImportModal,
     onOpenScannerModal,
@@ -101,7 +99,6 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
     const [sessionFilter, setSessionFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-    const [isClearAllOpen, setIsClearAllOpen] = useState(false);
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -160,15 +157,6 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
         toast.success(`Deleted ${selectedIds.length} guests from the register.`);
         setSelectedIds([]);
         setIsBulkDeleteOpen(false);
-    };
-
-    const confirmClearAll = () => {
-        if (onClearAll) {
-            onClearAll();
-            setSelectedIds([]);
-            toast.success("All registered guests deleted successfully.");
-        }
-        setIsClearAllOpen(false);
     };
 
     const handleSelectAll = (checked: boolean) => {
@@ -412,17 +400,6 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                         >
                             <RotateCcw className="h-3 w-3 text-slate-400" />
                             Reset Demo Data
-                        </button>
-
-                        {/* Delete All Guests Button */}
-                        <button
-                            onClick={() => setIsClearAllOpen(true)}
-                            disabled={attendees.length === 0}
-                            className="text-[11px] text-rose-400 hover:text-rose-300 disabled:opacity-40 disabled:hover:text-rose-400 flex items-center gap-1 transition-colors px-2.5 py-1 rounded-lg bg-rose-950/20 border border-rose-900/40 hover:bg-rose-950/40"
-                            title="Delete all guests and clear register"
-                        >
-                            <Trash2 className="h-3 w-3 text-rose-400" />
-                            Delete All Guests
                         </button>
                     </div>
                 </div>
@@ -724,32 +701,6 @@ export const AscendCheckInConsole: React.FC<AscendCheckInConsoleProps> = ({
                             className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
                         >
                             Delete {selectedIds.length} Guests
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Clear All Guests Modal */}
-            <AlertDialog open={isClearAllOpen} onOpenChange={setIsClearAllOpen}>
-                <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
-                    <AlertDialogHeader>
-                        <div className="flex items-center gap-2 text-rose-400 font-bold">
-                            <Trash2 className="h-5 w-5" />
-                            <AlertDialogTitle>Delete ALL Registered Guests?</AlertDialogTitle>
-                        </div>
-                        <AlertDialogDescription className="text-slate-400 text-xs pt-1">
-                            This will completely clear the guest register (all <strong className="text-white">{attendees.length}</strong> records). You can import your Excel file again whenever needed.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800">
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmClearAll}
-                            className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
-                        >
-                            Yes, Clear All Guests
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
