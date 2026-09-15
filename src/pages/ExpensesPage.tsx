@@ -89,12 +89,28 @@ const createInitialState = (storageKey: string): ExpenseDraftState => {
         eventDetails: normalizeEventDetails(data.eventDetails),
         items:
           data.items?.length > 0
-            ? data.items.map((item: ExpenseItem) => ({
-                ...item,
-                billAttached: null,
-                billFileName: item.billFileName || "",
-                billUrl: item.billUrl || undefined,
-              }))
+            ? data.items.map((item: ExpenseItem) => {
+                const itemBills =
+                  item.bills && item.bills.length > 0
+                    ? item.bills
+                    : item.billFileName
+                      ? [
+                          {
+                            fileName: item.billFileName,
+                            url: item.billUrl,
+                            size: 0,
+                          },
+                        ]
+                      : [];
+
+                return {
+                  ...item,
+                  billAttached: null,
+                  billFileName: item.billFileName || itemBills[0]?.fileName || "",
+                  billUrl: item.billUrl || itemBills[0]?.url || undefined,
+                  bills: itemBills,
+                };
+              })
             : [createEmptyItem(1), createEmptyItem(2), createEmptyItem(3)],
         gstPercentage: data.gstPercentage ?? 18,
       };
@@ -131,8 +147,9 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       items: items.map((item) => ({
         ...item,
         billAttached: null,
-        billFileName: item.billFileName || "",
-        billUrl: item.billUrl || undefined,
+        billFileName: item.billFileName || item.bills?.[0]?.fileName || "",
+        billUrl: item.billUrl || item.bills?.[0]?.url || undefined,
+        bills: item.bills || [],
       })),
       gstPercentage,
       savedAt: new Date().toISOString(),
@@ -148,8 +165,9 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       items: items.map((item) => ({
         ...item,
         billAttached: null,
-        billFileName: item.billFileName || "",
-        billUrl: item.billUrl || undefined,
+        billFileName: item.billFileName || item.bills?.[0]?.fileName || "",
+        billUrl: item.billUrl || item.bills?.[0]?.url || undefined,
+        bills: item.bills || [],
       })),
       gstPercentage,
       savedAt: new Date().toISOString(),
@@ -187,20 +205,26 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
         "Remarks",
       ],
       ...items.map((item) => {
-        const hasBill = Boolean(item.billFileName || item.billUrl || item.billAttached);
-        const isDataUrl = item.billUrl?.startsWith("data:");
-        const billDataLink = isDataUrl
-          ? "Local Attachment (See PDF/System)"
-          : item.billUrl || (hasBill ? item.billFileName : "-");
+        const itemBills =
+          item.bills && item.bills.length > 0
+            ? item.bills
+            : item.billFileName
+              ? [{ fileName: item.billFileName, url: item.billUrl, size: 0 }]
+              : [];
+        const hasBill = itemBills.length > 0;
+        const fileNames = itemBills.map((b) => b.fileName).join("; ");
+        const links = itemBills
+          .map((b) => (b.url?.startsWith("data:") ? "Local Attachment (See PDF)" : b.url || b.fileName))
+          .join("; ");
 
         return [
           item.sNo,
           item.particulars || "-",
           item.income,
           item.expenses,
-          hasBill ? "Yes" : "No",
-          item.billFileName || "-",
-          billDataLink,
+          hasBill ? `Yes (${itemBills.length})` : "No",
+          fileNames || "-",
+          links || "-",
           item.remarks || "-",
         ];
       }),

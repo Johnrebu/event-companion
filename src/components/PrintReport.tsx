@@ -100,7 +100,11 @@ const PrintReport = forwardRef<HTMLDivElement, PrintReportProps>(
                   <td className="border border-gray-300 px-3 py-2 text-right text-red-700 font-medium">
                     {item.expenses > 0 ? formatCurrency(item.expenses) : "-"}
                   </td>
-                  <td className="border border-gray-300 px-3 py-2">{item.billFileName || "-"}</td>
+                  <td className="border border-gray-300 px-3 py-2">
+                    {item.bills && item.bills.length > 0
+                      ? item.bills.map((b) => b.fileName).join(", ")
+                      : item.billFileName || "-"}
+                  </td>
                   <td className="border border-gray-300 px-3 py-2 text-gray-600">{item.remarks || "-"}</td>
                 </tr>
               ))}

@@ -46,29 +46,49 @@ const ExpenseBillField = ({
         ref={fileInputRef}
         type="file"
         multiple
-        onChange={(e) => {
+        onChange={async (e) => {
           const files = e.target.files;
-          if (!files) return;
-          const newBills: ExpenseBill[] = [];
-          const existingNames = new Set(bills.map((b) => b.fileName));
+          if (!files || files.length === 0) return;
+
+          const currentBills = bills || [];
+          const existingNames = new Set(currentBills.map((b) => b.fileName.toLowerCase()));
+          const promises: Promise<ExpenseBill | null>[] = [];
+
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
             if (file.size > 10 * 1024 * 1024) continue; // 10 MB limit
-            if (existingNames.has(file.name)) continue; // duplicate
-            const bill: ExpenseBill = { file, fileName: file.name, size: file.size };
-            if (isImageFile(file.name)) {
+            if (existingNames.has(file.name.toLowerCase())) continue; // duplicate
+            existingNames.add(file.name.toLowerCase());
+
+            const p = new Promise<ExpenseBill | null>((resolve) => {
               const reader = new FileReader();
               reader.onload = (event) => {
-                bill.url = event.target?.result as string;
-                onAddFiles([bill]);
+                resolve({
+                  file,
+                  fileName: file.name,
+                  size: file.size,
+                  url: event.target?.result as string,
+                });
+              };
+              reader.onerror = () => {
+                resolve({
+                  file,
+                  fileName: file.name,
+                  size: file.size,
+                  url: URL.createObjectURL(file),
+                });
               };
               reader.readAsDataURL(file);
-            } else {
-              bill.url = URL.createObjectURL(file);
-              newBills.push(bill);
-            }
+            });
+            promises.push(p);
           }
-          if (newBills.length) onAddFiles(newBills);
+
+          const loaded = await Promise.all(promises);
+          const valid = loaded.filter((b): b is ExpenseBill => b !== null);
+          if (valid.length > 0) {
+            onAddFiles(valid);
+          }
+          e.target.value = "";
         }}
         className="hidden"
         accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -127,13 +147,25 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
 
   const handleAddFiles = (newBills: ExpenseBill[]) => {
     const updated = [...(item.bills || []), ...newBills];
-    onChange({ ...item, bills: updated });
+    onChange({
+      ...item,
+      bills: updated,
+      billAttached: updated[0]?.file || null,
+      billFileName: updated[0]?.fileName || "",
+      billUrl: updated[0]?.url || undefined,
+    });
   };
 
   const handleRemoveBill = (index: number) => {
     const updated = [...(item.bills || [])];
     updated.splice(index, 1);
-    onChange({ ...item, bills: updated });
+    onChange({
+      ...item,
+      bills: updated,
+      billAttached: updated[0]?.file || null,
+      billFileName: updated[0]?.fileName || "",
+      billUrl: updated[0]?.url || undefined,
+    });
   };
 
   return (
@@ -214,13 +246,25 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
 
   const handleAddFiles = (newBills: ExpenseBill[]) => {
     const updated = [...(item.bills || []), ...newBills];
-    onChange({ ...item, bills: updated });
+    onChange({
+      ...item,
+      bills: updated,
+      billAttached: updated[0]?.file || null,
+      billFileName: updated[0]?.fileName || "",
+      billUrl: updated[0]?.url || undefined,
+    });
   };
 
   const handleRemoveBill = (index: number) => {
     const updated = [...(item.bills || [])];
     updated.splice(index, 1);
-    onChange({ ...item, bills: updated });
+    onChange({
+      ...item,
+      bills: updated,
+      billAttached: updated[0]?.file || null,
+      billFileName: updated[0]?.fileName || "",
+      billUrl: updated[0]?.url || undefined,
+    });
   };
 
   return (
