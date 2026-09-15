@@ -16,6 +16,7 @@ import {
   Trash2,
   UserRound,
   Wallet,
+  X,
 } from "lucide-react";
 import aionionLogo from "@/assets/aionion-logo.png";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,12 @@ type ReimbursementForm = {
   declaration: string;
 };
 
+export type ReimbursementBill = {
+  fileName: string;
+  url?: string;
+  size: number;
+};
+
 type ReimbursementItem = {
   id: string;
   expenseDate: string;
@@ -50,6 +57,7 @@ type ReimbursementItem = {
   billAttached: boolean | null;
   billFileName: string;
   billUrl?: string;
+  bills?: ReimbursementBill[];
 };
 
 type SavedDraft = {
@@ -108,6 +116,7 @@ const createExpenseItem = (overrides: Partial<ReimbursementItem> = {}): Reimburs
   companyName: DEFAULT_COMPANY_NAME,
   billAttached: null,
   billFileName: "",
+  bills: [],
   ...overrides,
 });
 
@@ -153,6 +162,21 @@ const formatDisplayDate = (value: string) => {
     return value;
   }
 };
+
+const formatFileSize = (bytes: number) => {
+  if (!bytes || bytes <= 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  return `${mb.toFixed(1)} MB`;
+};
+
+const isImageFileName = (name: string, url?: string) =>
+  Boolean(url?.startsWith("data:image/") || /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(name));
+
+const isPdfFileName = (name: string, url?: string) =>
+  Boolean(url?.startsWith("data:application/pdf") || /\.pdf$/i.test(name));
 
 const amountFromString = (value: string) => {
   const parsed = Number(value);
@@ -206,6 +230,12 @@ const normalizeItem = (item?: Partial<ReimbursementItem>) => ({
   billAttached: item?.billAttached ?? null,
   billFileName: item?.billFileName ?? "",
   billUrl: item?.billUrl,
+  bills:
+    item?.bills && item.bills.length > 0
+      ? item.bills
+      : item?.billFileName
+        ? [{ fileName: item.billFileName, url: item.billUrl, size: 0 }]
+        : [],
 });
 
 const getEmptyDraft = (): SavedDraft => ({
@@ -233,7 +263,8 @@ const hasDraftContent = (form: ReimbursementForm, items: ReimbursementItem[]) =>
       item.remarks.trim() ||
       item.companyName.trim() !== DEFAULT_COMPANY_NAME ||
       item.billFileName ||
-      item.billUrl,
+      item.billUrl ||
+      (item.bills && item.bills.length > 0),
   );
 
 const getInitialDraft = (): SavedDraft => {
@@ -262,7 +293,17 @@ const getInitialDraft = (): SavedDraft => {
       },
       items:
         parsed.items && parsed.items.length > 0
-          ? parsed.items.map((item) => createExpenseItem(item))
+          ? parsed.items.map((item) =>
+              createExpenseItem({
+                ...item,
+                bills:
+                  item.bills && item.bills.length > 0
+                    ? item.bills
+                    : item.billFileName
+                      ? [{ fileName: item.billFileName, url: item.billUrl, size: 0 }]
+                      : [],
+              }),
+            )
           : INITIAL_ITEMS,
     };
   } catch {
@@ -271,19 +312,33 @@ const getInitialDraft = (): SavedDraft => {
 };
 
 const buildReimbursementPrintHtml = (form: ReimbursementForm, items: ReimbursementItem[]) => {
-  const attachedItems = items.filter((item) => Boolean(item.billUrl || item.billFileName));
   const total = items.reduce((sum, item) => sum + amountFromString(item.invoiceAmount), 0);
   const tableRows = items
     .map(
-      (item, index) => `
+      (item, index) => {
+        const itemBills =
+          item.bills && item.bills.length > 0
+            ? item.bills
+            : item.billFileName
+              ? [{ fileName: item.billFileName, url: item.billUrl, size: 0 }]
+              : [];
+        const billBadge =
+          itemBills.length > 1
+            ? ` 📎 (${itemBills.length})`
+            : itemBills.length === 1
+              ? ` 📎`
+              : "";
+
+        return `
         <tr>
           <td>${index + 1}</td>
           <td>${escapeHtml(formatDisplayDate(item.expenseDate))}</td>
           <td>${escapeHtml(item.description || "-")}</td>
           <td class="amount">${escapeHtml(formatCurrency(amountFromString(item.invoiceAmount)))}</td>
-          <td>${escapeHtml(item.remarks || "-")} ${item.billFileName ? `📎` : ""}</td>
+          <td>${escapeHtml(item.remarks || "-")}${billBadge}</td>
           <td>${escapeHtml(item.companyName || "-")}</td>
-        </tr>`,
+        </tr>`;
+      },
     )
     .join("");
 
@@ -628,28 +683,49 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
             </div>
           </section>
 
-          ${attachedItems.length > 0
-      ? `
+          ${(() => {
+            const allAttachedBills: {
+              itemIndex: number;
+              description: string;
+              amount: number;
+              bill: ReimbursementBill;
+            }[] = [];
+
+            items.forEach((item, index) => {
+              const itemBills: ReimbursementBill[] =
+                item.bills && item.bills.length > 0
+                  ? item.bills
+                  : item.billFileName || item.billUrl
+                    ? [{ fileName: item.billFileName || "Attached Document", url: item.billUrl, size: 0 }]
+                    : [];
+
+              itemBills.forEach((bill) => {
+                allAttachedBills.push({
+                  itemIndex: index + 1,
+                  description: item.description || "Expense Description",
+                  amount: amountFromString(item.invoiceAmount),
+                  bill,
+                });
+              });
+            });
+
+            if (allAttachedBills.length === 0) return "";
+
+            return `
           <section class="section" style="page-break-before: always;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
               <h2 class="section-title" style="margin: 0;">Attached Bills & Supporting Receipts</h2>
               <span style="font-size: 12px; font-weight: 700; color: #0b5695; background: #f0f9ff; padding: 4px 12px; border-radius: 20px; border: 1px solid #bae6fd;">
-                ${attachedItems.length} Attached ${attachedItems.length === 1 ? "Document" : "Documents"}
+                ${allAttachedBills.length} Attached ${allAttachedBills.length === 1 ? "Document" : "Documents"}
               </span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 20px;">
-              ${attachedItems
-        .map((item) => {
-          const itemIndex = items.findIndex((i) => i.id === item.id) + 1;
-          const isImage =
-            item.billUrl?.startsWith("data:image/") ||
-            /\\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.billFileName);
+              ${allAttachedBills
+                .map(({ itemIndex, description, amount, bill }) => {
+                  const isImage = isImageFileName(bill.fileName, bill.url);
+                  const isPdf = isPdfFileName(bill.fileName, bill.url);
 
-          const isPdf =
-            item.billUrl?.startsWith("data:application/pdf") ||
-            /\\.pdf$/i.test(item.billFileName);
-
-          return `
+                  return `
                     <div style="border: 1px solid #cbd5e1; border-radius: 16px; background: #ffffff; padding: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); page-break-inside: avoid;">
                       <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 14px;">
                         <div>
@@ -657,75 +733,74 @@ const buildReimbursementPrintHtml = (form: ReimbursementForm, items: Reimburseme
                             Item #${itemIndex} Attachment
                           </span>
                           <h3 style="margin: 2px 0 0; font-size: 16px; font-weight: 700; color: #0f172a;">
-                            ${escapeHtml(item.description || "Expense Description")}
+                            ${escapeHtml(description)}
                           </h3>
                         </div>
                         <div style="text-align: right;">
                           <div style="font-size: 14px; font-weight: 700; color: #991b1b;">
-                            ${amountFromString(item.invoiceAmount) > 0 ? escapeHtml(formatCurrency(amountFromString(item.invoiceAmount))) : "-"}
+                            ${amount > 0 ? escapeHtml(formatCurrency(amount)) : "-"}
                           </div>
                           <div style="font-size: 12px; color: #64748b;">
-                            📎 ${escapeHtml(item.billFileName || "Attached Bill")}
+                            📎 ${escapeHtml(bill.fileName || "Attached Bill")} ${bill.size > 0 ? `(${formatFileSize(bill.size)})` : ""}
                           </div>
                         </div>
                       </div>
 
-                      ${isImage && item.billUrl
-              ? `
+                      ${isImage && bill.url
+                        ? `
                         <div style="text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 12px;">
-                          <img src="${item.billUrl}" alt="${escapeHtml(item.billFileName)}" style="max-width: 100%; max-height: 540px; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                          <img src="${bill.url}" alt="${escapeHtml(bill.fileName)}" style="max-width: 100%; max-height: 540px; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
                         </div>
                       `
-              : isPdf && item.billUrl
-                ? `
+                        : isPdf && bill.url
+                          ? `
                         <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 16px; text-align: center;">
                           <div style="font-size: 36px; margin-bottom: 6px;">📄</div>
                           <div style="font-size: 14px; font-weight: 700; color: #0369a1;">
-                            ${escapeHtml(item.billFileName)}
+                            ${escapeHtml(bill.fileName)}
                           </div>
                           <div style="font-size: 12px; color: #0284c7; margin-top: 4px;">
                             PDF document attached to this claim item.
                           </div>
                           <div style="margin-top: 12px;">
-                            <a href="${item.billUrl}" download="${escapeHtml(item.billFileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                            <a href="${bill.url}" download="${escapeHtml(bill.fileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
                               Download / View PDF Attachment
                             </a>
                           </div>
                         </div>
                       `
-                : `
+                          : `
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
                           <div style="display: flex; align-items: center; gap: 12px;">
                             <div style="font-size: 28px;">📎</div>
                             <div>
                               <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
-                                ${escapeHtml(item.billFileName || "Attached Document")}
+                                ${escapeHtml(bill.fileName || "Attached Document")}
                               </div>
                               <div style="font-size: 12px; color: #64748b;">
                                 Supporting document attached to expense item
                               </div>
                             </div>
                           </div>
-                          ${item.billUrl
-                  ? `
-                            <a href="${item.billUrl}" download="${escapeHtml(item.billFileName || "attached-bill")}" style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                          ${bill.url
+                            ? `
+                            <a href="${bill.url}" download="${escapeHtml(bill.fileName || "attached-bill")}" style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
                               View Document
                             </a>
                           `
-                  : ""
-                }
+                            : ""
+                          }
                         </div>
                       `
-            }
+                      }
                     </div>
                   `;
-        })
-        .join("")}
+                })
+                .join("")}
             </div>
           </section>
-          `
-      : ""
-    }
+          `;
+          })()}
 
           <footer class="footer">
             <div>
@@ -850,42 +925,143 @@ export default function FeedbackFormPage() {
     setItems((current) => current.filter((item) => item.id !== itemId));
   };
 
-  const handleFileUpload = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = async (
+    itemId: string,
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
-      return;
+    const targetItem = items.find((i) => i.id === itemId);
+    const currentBills: ReimbursementBill[] =
+      targetItem?.bills && targetItem.bills.length > 0
+        ? [...targetItem.bills]
+        : targetItem?.billFileName
+          ? [{ fileName: targetItem.billFileName, url: targetItem.billUrl, size: 0 }]
+          : [];
+
+    const existingNames = new Set(currentBills.map((b) => b.fileName.toLowerCase()));
+    let skippedCount = 0;
+    let oversizedCount = 0;
+
+    const filePromises: Promise<ReimbursementBill | null>[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // 10 MB limit
+      if (file.size > 10 * 1024 * 1024) {
+        oversizedCount++;
+        continue;
+      }
+      if (existingNames.has(file.name.toLowerCase())) {
+        skippedCount++;
+        continue;
+      }
+      existingNames.add(file.name.toLowerCase());
+
+      const p = new Promise<ReimbursementBill | null>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          resolve({
+            fileName: file.name,
+            url: dataUrl,
+            size: file.size,
+          });
+        };
+        reader.onerror = () => {
+          resolve(null);
+        };
+        reader.readAsDataURL(file);
+      });
+      filePromises.push(p);
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
+    const loaded = await Promise.all(filePromises);
+    const validLoaded = loaded.filter((b): b is ReimbursementBill => b !== null);
+
+    if (validLoaded.length > 0) {
+      const updatedBills = [...currentBills, ...validLoaded];
       setItems((current) =>
         current.map((item) =>
           item.id === itemId
-            ? { ...item, billAttached: true, billFileName: file.name, billUrl: dataUrl }
+            ? {
+                ...item,
+                billAttached: true,
+                billFileName: updatedBills[0]?.fileName || "",
+                billUrl: updatedBills[0]?.url,
+                bills: updatedBills,
+              }
             : item,
         ),
       );
-      toast.success("Bill attached successfully");
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read file");
-    };
-    reader.readAsDataURL(file);
+      toast.success(
+        validLoaded.length === 1
+          ? `Attached "${validLoaded[0].fileName}"`
+          : `${validLoaded.length} bills attached successfully`,
+      );
+    }
+
+    if (oversizedCount > 0) {
+      toast.error(`${oversizedCount} file(s) exceeded the 10MB limit and were skipped`);
+    }
+    if (skippedCount > 0) {
+      toast.info(`${skippedCount} duplicate file(s) skipped`);
+    }
+
+    // Reset input value so same files can be re-selected if deleted
+    event.target.value = "";
+  };
+
+  const removeSingleBill = (itemId: string, billIndex: number) => {
+    setItems((current) =>
+      current.map((item) => {
+        if (item.id !== itemId) return item;
+        const currentBills =
+          item.bills && item.bills.length > 0
+            ? [...item.bills]
+            : item.billFileName
+              ? [{ fileName: item.billFileName, url: item.billUrl, size: 0 }]
+              : [];
+
+        currentBills.splice(billIndex, 1);
+        return {
+          ...item,
+          billAttached: currentBills.length > 0,
+          billFileName: currentBills[0]?.fileName || "",
+          billUrl: currentBills[0]?.url || undefined,
+          bills: currentBills,
+        };
+      }),
+    );
+    toast.success("Bill removed");
   };
 
   const removeAttachment = (itemId: string) => {
     setItems((current) =>
       current.map((item) =>
         item.id === itemId
-          ? { ...item, billAttached: null, billFileName: "", billUrl: undefined }
+          ? { ...item, billAttached: null, billFileName: "", billUrl: undefined, bills: [] }
           : item,
       ),
     );
-    toast.success("Attachment removed");
+    toast.success("All attachments removed");
+  };
+
+  const viewBill = (bill: ReimbursementBill) => {
+    if (!bill.url) return;
+    const win = window.open();
+    if (win) {
+      if (bill.url.startsWith("data:application/pdf")) {
+        win.document.write(
+          `<iframe src="${bill.url}" width="100%" height="100%" style="border:none;"></iframe>`,
+        );
+      } else {
+        win.document.write(
+          `<img src="${bill.url}" style="max-width:100%; max-height:100vh; object-fit:contain; margin:auto; display:block;" />`,
+        );
+      }
+    }
   };
 
   const validateClaim = () => {
@@ -1173,144 +1349,185 @@ export default function FeedbackFormPage() {
                     <TableHead className="min-w-[160px]">Invoice Amount</TableHead>
                     <TableHead className="min-w-[180px]">Remarks If Any</TableHead>
                     <TableHead className="min-w-[220px]">Company Name</TableHead>
-                    <TableHead className="min-w-[140px]">Attach Bill</TableHead>
+                    <TableHead className="min-w-[220px]">Attach Bill</TableHead>
                     <TableHead className="w-[72px] text-right">Remove</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item, index) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-semibold text-slate-700">{index + 1}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="date"
-                          value={item.expenseDate}
-                          onChange={(event) =>
-                            handleItemChange(item.id, "expenseDate", event.target.value)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.description}
-                          onChange={(event) =>
-                            handleItemChange(item.id, "description", event.target.value)
-                          }
-                          placeholder="Describe the expense"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.invoiceAmount}
-                          onChange={(event) =>
-                            handleItemChange(item.id, "invoiceAmount", event.target.value)
-                          }
-                          placeholder="0.00"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.remarks}
-                          onChange={(event) =>
-                            handleItemChange(item.id, "remarks", event.target.value)
-                          }
-                          placeholder="Optional note"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.companyName}
-                          onChange={(event) =>
-                            handleItemChange(item.id, "companyName", event.target.value)
-                          }
-                          placeholder={DEFAULT_COMPANY_NAME}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
-                          {item.billUrl || item.billFileName ? (
-                            <div className="flex w-full items-center justify-between gap-2 overflow-hidden">
-                              <div className="flex items-center gap-1.5 overflow-hidden">
-                                {item.billUrl?.startsWith("data:image/") ||
-                                  /\\.(jpg|jpeg|png|webp|gif)$/i.test(item.billFileName || "") ? (
-                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded bg-slate-100">
-                                    <ImageIcon className="h-3 w-3 text-slate-400" />
-                                  </div>
-                                ) : (
-                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-blue-50">
-                                    <FileText className="h-3 w-3 text-blue-500" />
-                                  </div>
-                                )}
-                                <span className="truncate text-xs font-medium text-slate-700">
-                                  {item.billFileName || "Attached"}
-                                </span>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-1">
-                                {item.billUrl && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-slate-400 hover:text-blue-600"
-                                    onClick={() => {
-                                      const win = window.open();
-                                      if (win) {
-                                        if (item.billUrl?.startsWith("data:application/pdf")) {
-                                          win.document.write(
-                                            `<iframe src="\${item.billUrl}" width="100%" height="100%" style="border:none;"></iframe>`,
-                                          );
-                                        } else {
-                                          win.document.write(
-                                            `<img src="\${item.billUrl}" style="max-width:100%;" />`,
-                                          );
-                                        }
-                                      }
-                                    }}
+                  {items.map((item, index) => {
+                    const itemBills: ReimbursementBill[] =
+                      item.bills && item.bills.length > 0
+                        ? item.bills
+                        : item.billFileName
+                          ? [{ fileName: item.billFileName, url: item.billUrl, size: 0 }]
+                          : [];
+
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="align-top font-semibold text-slate-700">{index + 1}</TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            type="date"
+                            value={item.expenseDate}
+                            onChange={(event) =>
+                              handleItemChange(item.id, "expenseDate", event.target.value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            value={item.description}
+                            onChange={(event) =>
+                              handleItemChange(item.id, "description", event.target.value)
+                            }
+                            placeholder="Describe the expense"
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.invoiceAmount}
+                            onChange={(event) =>
+                              handleItemChange(item.id, "invoiceAmount", event.target.value)
+                            }
+                            placeholder="0.00"
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            value={item.remarks}
+                            onChange={(event) =>
+                              handleItemChange(item.id, "remarks", event.target.value)
+                            }
+                            placeholder="Optional note"
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            value={item.companyName}
+                            onChange={(event) =>
+                              handleItemChange(item.id, "companyName", event.target.value)
+                            }
+                            placeholder={DEFAULT_COMPANY_NAME}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          {itemBills.length > 0 ? (
+                            <div className="flex flex-col gap-1.5 min-w-[200px]">
+                              <div className="flex flex-col gap-1">
+                                {itemBills.map((bill, billIdx) => (
+                                  <div
+                                    key={`${bill.fileName}-${billIdx}`}
+                                    className="flex items-center justify-between gap-1.5 rounded-md border border-slate-200 bg-white p-1.5 text-xs shadow-sm transition-colors hover:border-slate-300"
                                   >
-                                    <Eye className="h-3.5 w-3.5" />
-                                  </Button>
-                                )}
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 text-slate-400 hover:text-red-500"
-                                  onClick={() => removeAttachment(item.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
+                                    <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+                                      {isImageFileName(bill.fileName, bill.url) ? (
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded bg-slate-100">
+                                          {bill.url ? (
+                                            <img
+                                              src={bill.url}
+                                              alt={bill.fileName}
+                                              className="h-full w-full object-cover"
+                                            />
+                                          ) : (
+                                            <ImageIcon className="h-3.5 w-3.5 text-slate-400" />
+                                          )}
+                                        </div>
+                                      ) : isPdfFileName(bill.fileName, bill.url) ? (
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-red-50 text-red-500">
+                                          <FileText className="h-3.5 w-3.5" />
+                                        </div>
+                                      ) : (
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-blue-50 text-blue-500">
+                                          <FileText className="h-3.5 w-3.5" />
+                                        </div>
+                                      )}
+                                      <div className="min-w-0 flex-1 overflow-hidden">
+                                        <p
+                                          className="truncate font-medium text-slate-700 leading-tight"
+                                          title={bill.fileName}
+                                        >
+                                          {bill.fileName}
+                                        </p>
+                                        {bill.size > 0 && (
+                                          <span className="text-[10px] text-slate-400">
+                                            {formatFileSize(bill.size)}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-0.5">
+                                      {bill.url && (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 text-slate-400 hover:text-blue-600"
+                                          title="View bill"
+                                          onClick={() => viewBill(bill)}
+                                        >
+                                          <Eye className="h-3.5 w-3.5" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 text-slate-400 hover:text-red-500"
+                                        title="Remove bill"
+                                        onClick={() => removeSingleBill(item.id, billIdx)}
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
+
+                              <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-slate-300 bg-slate-50/70 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-400 hover:bg-slate-100 hover:text-slate-900">
+                                <Paperclip className="h-3 w-3" />
+                                <span>+ Attach More</span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  className="hidden"
+                                  accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+                                  onChange={(e) => handleFileUpload(item.id, e)}
+                                />
+                              </label>
                             </div>
                           ) : (
-                            <label className="flex w-full cursor-pointer items-center justify-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900">
-                              <Paperclip className="h-3.5 w-3.5" />
-                              <span>Attach</span>
-                              <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*,.pdf"
-                                onChange={(e) => handleFileUpload(item.id, e)}
-                              />
-                            </label>
+                            <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
+                              <label className="flex w-full cursor-pointer items-center justify-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900">
+                                <Paperclip className="h-3.5 w-3.5" />
+                                <span>Attach</span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  className="hidden"
+                                  accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+                                  onChange={(e) => handleFileUpload(item.id, e)}
+                                />
+                              </label>
+                            </div>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeExpenseRow(item.id)}
-                          className="text-red-500 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell className="text-right align-top">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeExpenseRow(item.id)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
                 <TableFooter>
                   <TableRow>
