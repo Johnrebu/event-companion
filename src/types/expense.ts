@@ -1,3 +1,10 @@
+export interface ExpenseBill {
+  file: File;
+  fileName: string;
+  url?: string; // data URL for image preview or object URL for PDFs
+  size: number;
+}
+
 export interface ExpenseItem {
   id: string;
   sNo: number;
@@ -5,10 +12,13 @@ export interface ExpenseItem {
   income: number;
   expenses: number;
   remarks: string;
+  // Legacy single‑bill fields (keep for backward compatibility)
   billAttached: File | null;
   billFileName: string;
   billUrl?: string;
   billStoragePath?: string;
+  // New multi‑bill support
+  bills?: ExpenseBill[];
 }
 
 export interface EventDetails {

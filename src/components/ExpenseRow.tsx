@@ -1,9 +1,10 @@
-import { ExpenseItem } from "@/types/expense";
+// Updated ExpenseRow component with multi‑bill support
+import { ExpenseItem, ExpenseBill } from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Paperclip, X, FileText, Trash2, ExternalLink } from "lucide-react";
+import { Paperclip, X, FileText, Trash2 } from "lucide-react";
 import { useRef } from "react";
 
 interface ExpenseRowProps {
@@ -14,77 +15,104 @@ interface ExpenseRowProps {
 
 interface ExpenseBillFieldProps {
   item: ExpenseItem;
+  bills: ExpenseBill[];
   fileInputRef: React.RefObject<HTMLInputElement>;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: () => void;
+  onAddFiles: (newBills: ExpenseBill[]) => void;
+  onRemoveFile: (index: number) => void;
   buttonClassName?: string;
 }
 
 const ExpenseBillField = ({
   item,
+  bills,
   fileInputRef,
-  onFileChange,
+  onAddFiles,
   onRemoveFile,
   buttonClassName,
 }: ExpenseBillFieldProps) => {
-  const isImage =
-    item.billUrl?.startsWith("data:image/") ||
-    /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.billFileName);
+  const formatSize = (size: number) => {
+    if (size < 1024) return `${size} B`;
+    const kb = size / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(1)} MB`;
+  };
+
+  const isImageFile = (fileName: string) => /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(fileName);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-2">
       <input
         ref={fileInputRef}
         type="file"
-        onChange={onFileChange}
+        multiple
+        onChange={(e) => {
+          const files = e.target.files;
+          if (!files) return;
+          const newBills: ExpenseBill[] = [];
+          const existingNames = new Set(bills.map((b) => b.fileName));
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > 10 * 1024 * 1024) continue; // 10 MB limit
+            if (existingNames.has(file.name)) continue; // duplicate
+            const bill: ExpenseBill = { file, fileName: file.name, size: file.size };
+            if (isImageFile(file.name)) {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                bill.url = event.target?.result as string;
+                onAddFiles([bill]);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              bill.url = URL.createObjectURL(file);
+              newBills.push(bill);
+            }
+          }
+          if (newBills.length) onAddFiles(newBills);
+        }}
         className="hidden"
-        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.webp"
+        accept=".pdf,.jpg,.jpeg,.png,.webp"
       />
-      {item.billFileName ? (
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-accent/60 p-1.5 px-2.5 text-sm shadow-sm transition-all hover:border-primary/40">
-          {isImage && item.billUrl ? (
-            <img
-              src={item.billUrl}
-              alt="Bill thumbnail"
-              className="h-7 w-7 shrink-0 rounded object-cover border border-border"
-            />
-          ) : (
-            <FileText className="h-4 w-4 shrink-0 text-primary" />
-          )}
-          <span className="min-w-0 flex-1 truncate font-medium text-accent-foreground">
-            {item.billFileName}
-          </span>
-          {item.billUrl && (
-            <a
-              href={item.billUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 rounded p-1 text-primary transition-colors hover:bg-primary/10 hover:text-primary"
-              title="Open / Preview attached bill"
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => fileInputRef.current?.click()}
+        className={cn("gap-2 border-dashed hover:border-primary hover:text-primary", buttonClassName)}
+      >
+        <Paperclip className="h-4 w-4" />
+        Attach Bill
+      </Button>
+
+      {bills && bills.length > 0 && (
+        <div className="rounded border border-border bg-accent/60 p-2">
+          {bills.map((bill, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-2 rounded-lg border border-border bg-background p-1.5 text-sm"
             >
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          )}
-          <button
-            type="button"
-            onClick={onRemoveFile}
-            className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-            aria-label="Remove attached bill"
-          >
-            <X className="h-4 w-4" />
-          </button>
+              {isImageFile(bill.fileName) && bill.url ? (
+                <img src={bill.url} alt={bill.fileName} className="h-7 w-7 rounded object-cover" />
+              ) : (
+                <FileText className="h-4 w-4 shrink-0 text-primary" />
+              )}
+              <span className="flex-1 truncate" title={bill.fileName}>
+                {bill.fileName}
+              </span>
+              <span className="text-muted-foreground whitespace-nowrap">
+                {formatSize(bill.size)}
+              </span>
+              <button
+                type="button"
+                onClick={() => onRemoveFile(idx)}
+                className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                aria-label="Remove attached bill"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
         </div>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          className={cn("gap-2 border-dashed hover:border-primary hover:text-primary", buttonClassName)}
-        >
-          <Paperclip className="h-4 w-4" />
-          Attach Bill
-        </Button>
       )}
     </div>
   );
@@ -97,42 +125,20 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
     onChange({ ...item, [field]: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        onChange({
-          ...item,
-          billAttached: file,
-          billFileName: file.name,
-          billUrl: dataUrl,
-          billStoragePath: undefined,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleAddFiles = (newBills: ExpenseBill[]) => {
+    const updated = [...(item.bills || []), ...newBills];
+    onChange({ ...item, bills: updated });
   };
 
-  const handleRemoveFile = () => {
-    onChange({
-      ...item,
-      billAttached: null,
-      billFileName: "",
-      billUrl: undefined,
-      billStoragePath: undefined,
-    });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleRemoveBill = (index: number) => {
+    const updated = [...(item.bills || [])];
+    updated.splice(index, 1);
+    onChange({ ...item, bills: updated });
   };
 
   return (
     <tr className="border-b border-border transition-colors hover:bg-muted/50">
-      <td className="p-3 text-center align-top font-medium text-muted-foreground">
-        {item.sNo}
-      </td>
+      <td className="p-3 text-center align-top font-medium text-muted-foreground">{item.sNo}</td>
       <td className="p-3 align-top">
         <Input
           value={item.particulars}
@@ -168,9 +174,11 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
       <td className="min-w-[220px] p-3 align-top">
         <ExpenseBillField
           item={item}
+          bills={item.bills || []}
           fileInputRef={fileInputRef}
-          onFileChange={handleFileChange}
-          onRemoveFile={handleRemoveFile}
+          onAddFiles={handleAddFiles}
+          onRemoveFile={handleRemoveBill}
+          buttonClassName={undefined}
         />
       </td>
       <td className="p-3 align-top">
@@ -196,6 +204,7 @@ const ExpenseRow = ({ item, onChange, onDelete }: ExpenseRowProps) => {
   );
 };
 
+// Updated ExpenseCard to mirror the table row behaviour with multi‑bill support
 export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,44 +212,22 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
     onChange({ ...item, [field]: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        onChange({
-          ...item,
-          billAttached: file,
-          billFileName: file.name,
-          billUrl: dataUrl,
-          billStoragePath: undefined,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleAddFiles = (newBills: ExpenseBill[]) => {
+    const updated = [...(item.bills || []), ...newBills];
+    onChange({ ...item, bills: updated });
   };
 
-  const handleRemoveFile = () => {
-    onChange({
-      ...item,
-      billAttached: null,
-      billFileName: "",
-      billUrl: undefined,
-      billStoragePath: undefined,
-    });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleRemoveBill = (index: number) => {
+    const updated = [...(item.bills || [])];
+    updated.splice(index, 1);
+    onChange({ ...item, bills: updated });
   };
 
   return (
     <div className="rounded-xl border border-border bg-background/80 p-4 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Expense Item
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Expense Item</p>
           <p className="text-lg font-bold text-foreground">#{item.sNo}</p>
         </div>
         <Button
@@ -256,9 +243,7 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Particulars
-          </Label>
+          <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Particulars</Label>
           <Input
             value={item.particulars}
             onChange={(e) => handleChange("particulars", e.target.value)}
@@ -268,9 +253,7 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Income
-            </Label>
+            <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Income</Label>
             <Input
               type="number"
               value={item.income || ""}
@@ -283,9 +266,7 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Expenses
-            </Label>
+            <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Expenses</Label>
             <Input
               type="number"
               value={item.expenses || ""}
@@ -300,22 +281,19 @@ export const ExpenseCard = ({ item, onChange, onDelete }: ExpenseRowProps) => {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Bills
-          </Label>
+          <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Bills</Label>
           <ExpenseBillField
             item={item}
+            bills={item.bills || []}
             fileInputRef={fileInputRef}
-            onFileChange={handleFileChange}
-            onRemoveFile={handleRemoveFile}
+            onAddFiles={handleAddFiles}
+            onRemoveFile={handleRemoveBill}
             buttonClassName="w-full justify-center"
           />
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Remarks
-          </Label>
+          <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Remarks</Label>
           <Input
             value={item.remarks}
             onChange={(e) => handleChange("remarks", e.target.value)}
