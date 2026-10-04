@@ -66,12 +66,18 @@ const normalizeReport = (report: RawExpenseReport, fallbackCompanySlug: ExpenseC
     const company = getExpenseCompany(report.company_slug ?? fallbackCompanySlug);
 
     return {
-        ...report,
+        id: String(report.id ?? ''),
         company_slug: company.slug,
+        event_name: String(report.event_name ?? 'Untitled Event'),
+        event_date: String(report.event_date ?? ''),
+        venue: (report.venue as string | null) ?? null,
+        phone: (report.phone as string | null) ?? null,
         gst_percentage: report.gst_percentage ?? 18,
         total_income: report.total_income ?? 0,
         total_expenses: report.total_expenses ?? 0,
         items: report.items as unknown as ExpenseItem[],
+        created_at: report.created_at ?? null,
+        updated_at: report.updated_at ?? null,
     };
 };
 
@@ -85,8 +91,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
         setLoading(true);
         setError(null);
         try {
-            const { data, error: fetchError } = await supabase
-                .from('expense_reports')
+            const { data, error: fetchError } = await (supabase
+                .from('expense_reports') as any)
                 .select('*')
                 .eq('company_slug', companySlug)
                 .order('created_at', { ascending: false });
@@ -126,8 +132,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
                 billAttached: null
             }));
 
-            const { data, error: insertError } = await supabase
-                .from('expense_reports')
+            const { data, error: insertError } = await (supabase
+                .from('expense_reports') as any)
                 .insert({
                     company_slug: companySlug,
                     event_name: eventDetails.eventName || 'Untitled Event',
@@ -209,8 +215,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
                 }
             }
 
-            const { error: updateItemsError } = await supabase
-                .from('expense_reports')
+            const { error: updateItemsError } = await (supabase
+                .from('expense_reports') as any)
                 .update({ items: updatedItems as unknown as Json })
                 .eq('id', reportId);
 
@@ -233,8 +239,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
     const getReportById = useCallback(async (id: string) => {
         setLoading(true);
         try {
-            const { data, error: fetchError } = await supabase
-                .from('expense_reports')
+            const { data, error: fetchError } = await (supabase
+                .from('expense_reports') as any)
                 .select('*')
                 .eq('id', id)
                 .eq('company_slug', companySlug)
@@ -256,8 +262,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
     const deleteReport = useCallback(async (id: string) => {
         setLoading(true);
         try {
-            const { data: reportData } = await supabase
-                .from('expense_reports')
+            const { data: reportData } = await (supabase
+                .from('expense_reports') as any)
                 .select('items')
                 .eq('id', id)
                 .eq('company_slug', companySlug)
@@ -297,8 +303,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
                 console.error('Document metadata cleanup failed:', docsDeleteError);
             }
 
-            const { error: deleteError } = await supabase
-                .from('expense_reports')
+            const { error: deleteError } = await (supabase
+                .from('expense_reports') as any)
                 .delete()
                 .eq('id', id)
                 .eq('company_slug', companySlug);
