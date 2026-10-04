@@ -262,8 +262,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
     const deleteReport = useCallback(async (id: string) => {
         setLoading(true);
         try {
-            const { data: reportData } = await supabase
-                .from('expense_reports')
+            const { data: reportData } = await (supabase
+                .from('expense_reports') as any)
                 .select('items')
                 .eq('id', id)
                 .eq('company_slug', companySlug)
@@ -303,8 +303,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
                 console.error('Document metadata cleanup failed:', docsDeleteError);
             }
 
-            const { error: deleteError } = await supabase
-                .from('expense_reports')
+            const { error: deleteError } = await (supabase
+                .from('expense_reports') as any)
                 .delete()
                 .eq('id', id)
                 .eq('company_slug', companySlug);
