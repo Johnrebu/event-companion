@@ -66,12 +66,18 @@ const normalizeReport = (report: RawExpenseReport, fallbackCompanySlug: ExpenseC
     const company = getExpenseCompany(report.company_slug ?? fallbackCompanySlug);
 
     return {
-        ...report,
+        id: String(report.id ?? ''),
         company_slug: company.slug,
+        event_name: String(report.event_name ?? 'Untitled Event'),
+        event_date: String(report.event_date ?? ''),
+        venue: (report.venue as string | null) ?? null,
+        phone: (report.phone as string | null) ?? null,
         gst_percentage: report.gst_percentage ?? 18,
         total_income: report.total_income ?? 0,
         total_expenses: report.total_expenses ?? 0,
         items: report.items as unknown as ExpenseItem[],
+        created_at: report.created_at ?? null,
+        updated_at: report.updated_at ?? null,
     };
 };
 
@@ -88,7 +94,7 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
             const { data, error: fetchError } = await supabase
                 .from('expense_reports')
                 .select('*')
-                .eq('company_slug', companySlug)
+                .eq('company_slug', companySlug as string)
                 .order('created_at', { ascending: false });
 
             if (fetchError) throw fetchError;
