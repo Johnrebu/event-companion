@@ -132,8 +132,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
                 billAttached: null
             }));
 
-            const { data, error: insertError } = await supabase
-                .from('expense_reports')
+            const { data, error: insertError } = await (supabase
+                .from('expense_reports') as any)
                 .insert({
                     company_slug: companySlug,
                     event_name: eventDetails.eventName || 'Untitled Event',
@@ -215,8 +215,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
                 }
             }
 
-            const { error: updateItemsError } = await supabase
-                .from('expense_reports')
+            const { error: updateItemsError } = await (supabase
+                .from('expense_reports') as any)
                 .update({ items: updatedItems as unknown as Json })
                 .eq('id', reportId);
 
