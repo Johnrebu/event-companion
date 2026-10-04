@@ -239,8 +239,8 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
     const getReportById = useCallback(async (id: string) => {
         setLoading(true);
         try {
-            const { data, error: fetchError } = await supabase
-                .from('expense_reports')
+            const { data, error: fetchError } = await (supabase
+                .from('expense_reports') as any)
                 .select('*')
                 .eq('id', id)
                 .eq('company_slug', companySlug)
