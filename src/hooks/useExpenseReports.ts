@@ -91,10 +91,10 @@ export function useExpenseReports(companySlug: ExpenseCompanySlug = DEFAULT_EXPE
         setLoading(true);
         setError(null);
         try {
-            const { data, error: fetchError } = await supabase
-                .from('expense_reports')
+            const { data, error: fetchError } = await (supabase
+                .from('expense_reports') as any)
                 .select('*')
-                .eq('company_slug', companySlug as string)
+                .eq('company_slug', companySlug)
                 .order('created_at', { ascending: false });
 
             if (fetchError) throw fetchError;
