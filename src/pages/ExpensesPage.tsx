@@ -52,6 +52,38 @@ const sanitizeFileNamePart = (value: string) =>
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
 
+const persistableBillUrl = (url?: string) =>
+  url?.startsWith("data:") || url?.startsWith("blob:") ? undefined : url;
+
+const saveExpenseDraft = (storageKey: string, report: ExpenseDraftState & { savedAt: string; companySlug: string }) => {
+  const compactReport = {
+    ...report,
+    items: report.items.map((item) => ({
+      ...item,
+      billAttached: null,
+      billUrl: persistableBillUrl(item.billUrl),
+      bills: item.bills?.map((bill) => ({
+        fileName: bill.fileName,
+        size: bill.size,
+        url: persistableBillUrl(bill.url),
+      })),
+    })),
+  };
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(compactReport));
+    return true;
+  } catch {
+    try {
+      localStorage.removeItem(storageKey);
+      localStorage.setItem(storageKey, JSON.stringify(compactReport));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
+
 const createEmptyItem = (sNo: number): ExpenseItem => ({
   id: crypto.randomUUID(),
   sNo,
@@ -166,7 +198,7 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       companySlug: company.slug,
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(report));
+    saveExpenseDraft(storageKey, report);
   }, [company.slug, eventDetails, gstPercentage, isInitialized, items, storageKey]);
 
   const handleSaveDraft = () => {
@@ -184,8 +216,11 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       companySlug: company.slug,
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(report));
-    toast.success("Draft saved successfully!");
+    if (saveExpenseDraft(storageKey, report)) {
+      toast.success("Draft saved successfully!");
+    } else {
+      toast.error("Draft could not be saved in this browser. Free up browser storage and try again.");
+    }
   };
 
   const handleExport = () => {
