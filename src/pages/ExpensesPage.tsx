@@ -56,25 +56,30 @@ const persistableBillUrl = (url?: string) =>
   url?.startsWith("data:") || url?.startsWith("blob:") ? undefined : url;
 
 const saveExpenseDraft = (storageKey: string, report: ExpenseDraftState & { savedAt: string; companySlug: string }) => {
-  const compactReport = {
-    ...report,
-    items: report.items.map((item) => ({
-      ...item,
-      billAttached: null,
-      billUrl: persistableBillUrl(item.billUrl),
-      bills: item.bills?.map((bill) => ({
-        fileName: bill.fileName,
-        size: bill.size,
-        url: persistableBillUrl(bill.url),
-      })),
-    })),
-  };
-
   try {
-    localStorage.setItem(storageKey, JSON.stringify(compactReport));
+    localStorage.setItem(storageKey, JSON.stringify(report));
     return true;
   } catch {
-    return false;
+    const compactReport = {
+      ...report,
+      items: report.items.map((item) => ({
+        ...item,
+        billAttached: null,
+        billUrl: persistableBillUrl(item.billUrl),
+        bills: item.bills?.map((bill) => ({
+          fileName: bill.fileName,
+          size: bill.size,
+          url: persistableBillUrl(bill.url),
+        })),
+      })),
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(compactReport));
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
 
