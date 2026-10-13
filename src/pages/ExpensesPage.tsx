@@ -74,13 +74,7 @@ const saveExpenseDraft = (storageKey: string, report: ExpenseDraftState & { save
     localStorage.setItem(storageKey, JSON.stringify(compactReport));
     return true;
   } catch {
-    try {
-      localStorage.removeItem(storageKey);
-      localStorage.setItem(storageKey, JSON.stringify(compactReport));
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }
 };
 
