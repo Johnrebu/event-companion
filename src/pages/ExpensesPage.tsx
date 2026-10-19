@@ -19,6 +19,7 @@ import ExpenseTable from "@/components/ExpenseTable";
 import TotalSummary from "@/components/TotalSummary";
 import Calculator from "@/components/Calculator";
 import CalculatorButton from "@/components/CalculatorButton";
+import BillScanner, { type ScannedBill } from "@/components/BillScanner";
 import { buildExpensePrintHtml } from "@/lib/expensePrint";
 import {
   saveExpenseDraftToStorage,
@@ -55,6 +56,37 @@ const sanitizeFileNamePart = (value: string) =>
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
 
+const persistableBillUrl = (url?: string) =>
+  url?.startsWith("data:") || url?.startsWith("blob:") ? undefined : url;
+
+const saveExpenseDraft = (storageKey: string, report: ExpenseDraftState & { savedAt: string; companySlug: string }) => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(report));
+    return true;
+  } catch {
+    const compactReport = {
+      ...report,
+      items: report.items.map((item) => ({
+        ...item,
+        billAttached: null,
+        billUrl: persistableBillUrl(item.billUrl),
+        bills: item.bills?.map((bill) => ({
+          fileName: bill.fileName,
+          size: bill.size,
+          url: persistableBillUrl(bill.url),
+        })),
+      })),
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(compactReport));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
+
 const createEmptyItem = (sNo: number): ExpenseItem => ({
   id: crypto.randomUUID(),
   sNo,
@@ -67,6 +99,15 @@ const createEmptyItem = (sNo: number): ExpenseItem => ({
   billUrl: undefined,
   billStoragePath: undefined,
 });
+
+const dataUrlToFile = (dataUrl: string, name: string) => {
+  const [meta, b64] = dataUrl.split(",");
+  const mime = meta.match(/data:(.*?);/)?.[1] ?? "image/jpeg";
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new File([arr], name, { type: mime });
+};
 
 const createDefaultEventDetails = (): EventDetails => ({
   eventName: "",
@@ -438,6 +479,25 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
     setItems((current) => [...current, createEmptyItem(current.length + 1)]);
   };
 
+  const handleScannedBills = (bills: ScannedBill[]) => {
+    setItems((current) => {
+      const kept = current.filter((i) => i.particulars.trim() || i.income || i.expenses || i.billFileName);
+      const added = bills.map((b, idx) => ({
+        ...createEmptyItem(kept.length + idx + 1),
+        particulars: [b.description, b.vendor].filter(Boolean).join(" – ") || b.fileName,
+        expenses: b.total,
+        remarks: b.date ? `Bill date ${b.date}` : "",
+        billFileName: b.fileName,
+        billUrl: b.dataUrl,
+        bills: [{ file: dataUrlToFile(b.dataUrl, b.fileName), fileName: b.fileName, url: b.dataUrl, size: 0 }],
+      }));
+      return [...kept, ...added].map((item, i) => ({ ...item, sNo: i + 1 }));
+    });
+    if (!eventDetails.date && bills[0]?.date) {
+      setEventDetails((d) => ({ ...d, date: bills[0].date }));
+    }
+  };
+
   const handleEventDetailChange = (field: keyof EventDetails, value: string) => {
     setEventDetails((current) => ({
       ...current,
@@ -610,6 +670,8 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
               Print / PDF
             </Button>
           </div>
+
+          <BillScanner onAdd={handleScannedBills} />
 
           <ExpenseTable
             items={items}

@@ -1,5 +1,3 @@
-import { ExpenseDraftState } from "@/types/expense";
-
 const DB_NAME = "expense_command_center_db";
 const STORE_NAME = "drafts";
 const DB_VERSION = 1;
