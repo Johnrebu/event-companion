@@ -111,15 +111,41 @@ const ExpenseBillField = ({
               key={idx}
               className="flex items-center gap-2 rounded-lg border border-border bg-background p-1.5 text-sm"
             >
-              {isImageFile(bill.fileName) && bill.url ? (
-                <img src={bill.url} alt={bill.fileName} className="h-7 w-7 rounded object-cover" />
+              {bill.url ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const win = window.open();
+                    if (win) {
+                      if (isImageFile(bill.fileName)) {
+                        win.document.write(`<!DOCTYPE html><html><head><title>${encodeURIComponent(bill.fileName)}</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;background:#090d16;min-height:100vh;"><img src="${bill.url}" alt="${encodeURIComponent(bill.fileName)}" style="max-width:96vw;max-height:96vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);" /></body></html>`);
+                        win.document.close();
+                      } else {
+                        win.location.href = bill.url;
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 min-w-0 flex-1 text-left hover:text-primary transition-colors cursor-pointer group"
+                  title="Click to preview bill"
+                >
+                  {isImageFile(bill.fileName) ? (
+                    <img src={bill.url} alt={bill.fileName} className="h-7 w-7 rounded object-cover shrink-0 border border-border" />
+                  ) : (
+                    <FileText className="h-4 w-4 shrink-0 text-primary" />
+                  )}
+                  <span className="flex-1 truncate font-medium group-hover:underline text-xs sm:text-sm" title={bill.fileName}>
+                    {bill.fileName}
+                  </span>
+                </button>
               ) : (
-                <FileText className="h-4 w-4 shrink-0 text-primary" />
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <FileText className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="flex-1 truncate text-xs sm:text-sm" title={bill.fileName}>
+                    {bill.fileName}
+                  </span>
+                </div>
               )}
-              <span className="flex-1 truncate" title={bill.fileName}>
-                {bill.fileName}
-              </span>
-              <span className="text-muted-foreground whitespace-nowrap">
+              <span className="text-muted-foreground whitespace-nowrap text-[11px]">
                 {formatSize(bill.size)}
               </span>
               <button

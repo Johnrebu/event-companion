@@ -21,6 +21,10 @@ import Calculator from "@/components/Calculator";
 import CalculatorButton from "@/components/CalculatorButton";
 import { buildExpensePrintHtml } from "@/lib/expensePrint";
 import {
+  saveExpenseDraftToStorage,
+  loadExpenseDraftFromStorage,
+} from "@/lib/expenseDraftStorage";
+import {
   DEFAULT_EXPENSE_COMPANY_SLUG,
   EXPENSE_COMPANIES,
   getExpenseCompany,
@@ -77,6 +81,84 @@ const normalizeEventDetails = (details?: Partial<EventDetails>): EventDetails =>
   ...createDefaultEventDetails(),
   ...details,
 });
+
+const ensureBillsHaveUrls = async (items: ExpenseItem[]): Promise<ExpenseItem[]> => {
+  return Promise.all(
+    items.map(async (item) => {
+      const itemBills =
+        item.bills && item.bills.length > 0
+          ? item.bills
+          : item.billFileName || item.billUrl
+            ? [
+                {
+                  file: (item.billAttached as File) || (undefined as any),
+                  fileName: item.billFileName || "Attached Bill",
+                  url: item.billUrl,
+                  size: 0,
+                },
+              ]
+            : [];
+
+      if (itemBills.length === 0) {
+        return item;
+      }
+
+      const updatedBills = await Promise.all(
+        itemBills.map(async (bill) => {
+          // 1. If bill already has data URL or http URL, it's ready
+          if (bill.url && (bill.url.startsWith("data:") || bill.url.startsWith("http"))) {
+            return bill;
+          }
+
+          // 2. If bill.file is available, convert file to data URL
+          if (bill.file instanceof File || bill.file instanceof Blob) {
+            try {
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(bill.file as File);
+              });
+              return { ...bill, url: dataUrl };
+            } catch (err) {
+              console.error("Failed to read bill file as data URL:", err);
+            }
+          }
+
+          // 3. If bill.url is a blob: URL, fetch and convert to base64 data URL
+          if (bill.url && bill.url.startsWith("blob:")) {
+            try {
+              const res = await fetch(bill.url);
+              const blob = await res.blob();
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              return { ...bill, url: dataUrl };
+            } catch (err) {
+              console.warn("Failed to convert blob URL to data URL:", err);
+            }
+          }
+
+          // 4. Fallback to item.billUrl if available
+          if (item.billUrl && !bill.url) {
+            return { ...bill, url: item.billUrl };
+          }
+
+          return bill;
+        }),
+      );
+
+      return {
+        ...item,
+        bills: updatedBills,
+        billUrl: updatedBills[0]?.url || item.billUrl,
+      };
+    }),
+  );
+};
 
 const createInitialState = (storageKey: string): ExpenseDraftState => {
   try {
@@ -136,9 +218,65 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Asynchronously load rich draft from IndexedDB on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRichDraft = async () => {
+      try {
+        const saved = await loadExpenseDraftFromStorage(storageKey);
+        if (saved && isMounted) {
+          if (saved.eventDetails) {
+            setEventDetails(normalizeEventDetails(saved.eventDetails));
+          }
+          if (saved.items && saved.items.length > 0) {
+            const loadedItems = saved.items.map((item: ExpenseItem) => {
+              const itemBills =
+                item.bills && item.bills.length > 0
+                  ? item.bills
+                  : item.billFileName
+                    ? [
+                        {
+                          fileName: item.billFileName,
+                          url: item.billUrl,
+                          size: 0,
+                        },
+                      ]
+                    : [];
+
+              return {
+                ...item,
+                billAttached: null,
+                billFileName: item.billFileName || itemBills[0]?.fileName || "",
+                billUrl: item.billUrl || itemBills[0]?.url || undefined,
+                bills: itemBills,
+              };
+            });
+            setItems(loadedItems);
+          }
+          if (saved.gstPercentage !== undefined) {
+            setGstPercentage(saved.gstPercentage);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load IndexedDB draft:", err);
+      } finally {
+        if (isMounted) {
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    loadRichDraft();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storageKey]);
+
+  // Auto-save using IndexedDB with fallback to localStorage
   useEffect(() => {
     if (!isInitialized) {
-      setIsInitialized(true);
       return;
     }
 
@@ -156,10 +294,10 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       companySlug: company.slug,
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(report));
+    saveExpenseDraftToStorage(storageKey, report);
   }, [company.slug, eventDetails, gstPercentage, isInitialized, items, storageKey]);
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     const report = {
       eventDetails,
       items: items.map((item) => ({
@@ -174,8 +312,8 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       companySlug: company.slug,
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(report));
-    toast.success("Draft saved successfully!");
+    await saveExpenseDraftToStorage(storageKey, report);
+    toast.success("Draft saved successfully with attached bills!");
   };
 
   const handleExport = () => {
@@ -248,7 +386,13 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
     toast.success("Excel / CSV report exported successfully!");
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    toast.info("Preparing bills and print preview...");
+
+    // Make sure all bills have fully resolved data URLs
+    const preparedItems = await ensureBillsHaveUrls(items);
+    setItems(preparedItems);
+
     const printWindow = window.open("", "_blank");
 
     if (!printWindow) {
@@ -260,18 +404,13 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       buildExpensePrintHtml({
         company,
         eventDetails,
-        items,
+        items: preparedItems,
         gstPercentage,
       }),
     );
     printWindow.document.close();
 
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-    }, 500);
-
-    toast.success("Print dialog opened!");
+    toast.success("Print preview opened!");
   };
 
   const handleItemChange = (updatedItem: ExpenseItem) => {

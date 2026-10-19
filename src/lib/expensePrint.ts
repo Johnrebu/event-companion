@@ -85,11 +85,11 @@ export const buildExpensePrintHtml = ({
     `,
   ).join("");
 
-  const allAttachedBills: {
+  const itemsWithBills: {
     itemIndex: number;
     particulars: string;
     expenses: number;
-    bill: ExpenseBill;
+    bills: ExpenseBill[];
   }[] = [];
 
   items.forEach((item, index) => {
@@ -105,15 +105,17 @@ export const buildExpensePrintHtml = ({
             }]
           : [];
 
-    itemBills.forEach((bill) => {
-      allAttachedBills.push({
+    if (itemBills.length > 0) {
+      itemsWithBills.push({
         itemIndex: item.sNo || index + 1,
         particulars: item.particulars || "Expense Particulars",
         expenses: item.expenses,
-        bill,
+        bills: itemBills,
       });
-    });
+    }
   });
+
+  const totalAttachedDocs = itemsWithBills.reduce((acc, curr) => acc + curr.bills.length, 0);
 
   const tableRows = items
     .map(
@@ -161,96 +163,150 @@ export const buildExpensePrintHtml = ({
     .join("");
 
   const attachedBillsHtml =
-    allAttachedBills.length > 0
+    itemsWithBills.length > 0
       ? `
         <section class="section" style="page-break-before: always;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-            <h2 class="section-title" style="margin: 0;">Attached Bills & Supporting Receipts</h2>
-            <span style="font-size: 12px; font-weight: 700; color: ${company.printAccentColor}; background: ${company.printAccentSoftColor}; padding: 4px 12px; border-radius: 20px; border: 1px solid ${company.printBorderColor};">
-              ${allAttachedBills.length} Attached ${allAttachedBills.length === 1 ? "Document" : "Documents"}
-            </span>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h2 class="section-title" style="margin: 0;">Attached Bills & Supporting Receipts</h2>
+              <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">
+                Verified invoices, receipts, and supporting attachments organized by expense item
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; font-weight: 700; color: ${company.printAccentColor}; background: ${company.printAccentSoftColor}; padding: 4px 12px; border-radius: 20px; border: 1px solid ${company.printBorderColor};">
+                ${itemsWithBills.length} ${itemsWithBills.length === 1 ? "Particular" : "Particulars"}
+              </span>
+              <span style="font-size: 12px; font-weight: 700; color: #0284c7; background: #f0f9ff; padding: 4px 12px; border-radius: 20px; border: 1px solid #bae6fd;">
+                ${totalAttachedDocs} Attached ${totalAttachedDocs === 1 ? "Bill" : "Bills"}
+              </span>
+            </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 20px;">
-            ${allAttachedBills
-              .map(({ itemIndex, particulars, expenses, bill }) => {
-                const isImage =
-                  bill.url?.startsWith("data:image/") ||
-                  /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(bill.fileName);
 
-                const isPdf =
-                  bill.url?.startsWith("data:application/pdf") ||
-                  /\.pdf$/i.test(bill.fileName);
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            ${itemsWithBills
+              .map(({ itemIndex, particulars, expenses, bills }) => {
+                const billCount = bills.length;
+                const collageClass =
+                  billCount === 1
+                    ? "collage-single"
+                    : billCount === 2
+                      ? "collage-two"
+                      : billCount === 3
+                        ? "collage-three"
+                        : "collage-many";
 
                 return `
-                  <div style="border: 1px solid #cbd5e1; border-radius: 16px; background: #ffffff; padding: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); page-break-inside: avoid;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 14px;">
+                  <div class="particular-attachment-card" style="border: 1px solid #cbd5e1; border-radius: 16px; background: #ffffff; padding: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); page-break-inside: avoid; break-inside: avoid;">
+                    <!-- Particular Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                       <div>
-                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: ${company.printAccentColor};">
-                          Item #${itemIndex} Attachment
-                        </span>
-                        <h3 style="margin: 2px 0 0; font-size: 16px; font-weight: 700; color: #0f172a;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: ${company.printAccentColor};">
+                            Item #${itemIndex} Attachment
+                          </span>
+                          <span style="font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 10px;">
+                            ${billCount} ${billCount === 1 ? "Bill" : "Bills"}
+                          </span>
+                        </div>
+                        <h3 style="margin: 4px 0 0; font-size: 17px; font-weight: 700; color: #0f172a;">
                           ${escapeHtml(particulars || "Expense Particulars")}
                         </h3>
                       </div>
                       <div style="text-align: right;">
-                        <div style="font-size: 14px; font-weight: 700; color: #b91c1c;">
+                        <div style="font-size: 15px; font-weight: 800; color: #b91c1c;">
                           ${expenses > 0 ? escapeHtml(formatCurrency(expenses)) : "-"}
                         </div>
-                        <div style="font-size: 12px; color: #64748b;">
-                          📎 ${escapeHtml(bill.fileName || "Attached Bill")} ${bill.size ? `(${formatSize(bill.size)})` : ""}
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                          Total Claim for Item #${itemIndex}
                         </div>
                       </div>
                     </div>
 
-                    ${
-                      isImage && bill.url
-                        ? `
-                      <div style="text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 12px;">
-                        <img src="${bill.url}" alt="${escapeHtml(bill.fileName)}" style="max-width: 100%; max-height: 540px; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-                      </div>
-                    `
-                        : isPdf && bill.url
-                          ? `
-                      <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 16px; text-align: center;">
-                        <div style="font-size: 36px; margin-bottom: 6px;">📄</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0369a1;">
-                          ${escapeHtml(bill.fileName)}
-                        </div>
-                        <div style="font-size: 12px; color: #0284c7; margin-top: 4px;">
-                          PDF document attached to this claim item.
-                        </div>
-                        <div style="margin-top: 12px;">
-                          <a href="${bill.url}" download="${escapeHtml(bill.fileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
-                            Download / View PDF Attachment
-                          </a>
-                        </div>
-                      </div>
-                    `
-                          : `
-                      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                          <div style="font-size: 28px;">📎</div>
-                          <div>
-                            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
-                              ${escapeHtml(bill.fileName || "Attached Document")}
+                    <!-- Landscape Collage Grid -->
+                    <div class="bills-collage ${collageClass}">
+                      ${bills
+                        .map((bill, bIdx) => {
+                          const isImage =
+                            bill.url?.startsWith("data:image/") ||
+                            /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(bill.fileName);
+
+                          const isPdf =
+                            bill.url?.startsWith("data:application/pdf") ||
+                            /\.pdf$/i.test(bill.fileName);
+
+                          return `
+                            <div class="collage-item" style="border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; page-break-inside: avoid; break-inside: avoid;">
+                              <!-- Bill Sub-header -->
+                              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                  <span style="font-size: 10px; font-weight: 800; background: #0f172a; color: #ffffff; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">
+                                    #${bIdx + 1}
+                                  </span>
+                                  <span style="font-size: 12px; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(bill.fileName)}">
+                                    ${escapeHtml(bill.fileName || `Bill ${bIdx + 1}`)}
+                                  </span>
+                                </div>
+                                <span style="font-size: 11px; font-weight: 600; color: #64748b; white-space: nowrap; flex-shrink: 0;">
+                                  ${bill.size ? formatSize(bill.size) : ""}
+                                </span>
+                              </div>
+
+                              <!-- Preview Body -->
+                              <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 180px;">
+                                ${
+                                  isImage && bill.url
+                                    ? `
+                                  <div class="bill-img-wrap" style="width: 100%; text-align: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                                    <img src="${bill.url}" alt="${escapeHtml(bill.fileName)}" style="max-width: 100%; max-height: ${billCount === 1 ? "420px" : "280px"}; width: auto; height: auto; object-fit: contain; border-radius: 6px;" />
+                                  </div>
+                                `
+                                    : isPdf && bill.url
+                                      ? `
+                                  <div style="width: 100%; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 18px 12px; text-align: center;">
+                                    <div style="font-size: 34px; margin-bottom: 4px;">📄</div>
+                                    <div style="font-size: 12px; font-weight: 700; color: #0369a1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                      ${escapeHtml(bill.fileName)}
+                                    </div>
+                                    <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">
+                                      PDF document attached
+                                    </div>
+                                    <div style="margin-top: 10px;">
+                                      <a href="${bill.url}" download="${escapeHtml(bill.fileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 6px; text-decoration: none;">
+                                        View / Download PDF
+                                      </a>
+                                    </div>
+                                  </div>
+                                `
+                                      : `
+                                  <div style="width: 100%; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px 12px; text-align: center;">
+                                    <div style="font-size: 28px;">📎</div>
+                                    <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                      ${escapeHtml(bill.fileName || "Attached Document")}
+                                    </div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                                      Attached supporting receipt ${bill.size ? `(${formatSize(bill.size)})` : ""}
+                                    </div>
+                                    ${
+                                      bill.url
+                                        ? `
+                                      <div style="margin-top: 8px;">
+                                        <a href="${bill.url}" download="${escapeHtml(bill.fileName || "attached-bill")}" style="display: inline-block; background: #0f172a; color: #ffffff; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-decoration: none;">
+                                          View Document
+                                        </a>
+                                      </div>
+                                    `
+                                        : ""
+                                    }
+                                  </div>
+                                `
+                                }
+                              </div>
                             </div>
-                            <div style="font-size: 12px; color: #64748b;">
-                              Supporting document attached to expense item
-                            </div>
-                          </div>
-                        </div>
-                        ${
-                          bill.url
-                            ? `
-                          <a href="${bill.url}" download="${escapeHtml(bill.fileName || "attached-bill")}" style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
-                            View Document
-                          </a>
-                        `
-                            : ""
-                        }
-                      </div>
-                    `
-                    }
+                          `;
+                        })
+                        .join("")}
+                    </div>
                   </div>
                 `;
               })
@@ -531,29 +587,118 @@ export const buildExpensePrintHtml = ({
           font-size: 12px;
           line-height: 1.7;
         }
+
+        /* Bills Landscape Collage Grid Styles */
+        .bills-collage {
+          display: grid;
+          gap: 16px;
+          width: 100%;
+        }
+        .collage-single {
+          grid-template-columns: 1fr;
+          max-width: 680px;
+          margin: 0 auto;
+        }
+        .collage-two {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .collage-three {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .collage-many {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .collage-item {
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .collage-item:hover {
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+        }
+
+        .no-print {
+          /* on-screen toolbar */
+        }
+
+        @media (max-width: 768px) {
+          .collage-two, .collage-three, .collage-many {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
         @media print {
           @page {
-            size: A4;
-            margin: 10mm;
+            size: A4 portrait;
+            margin: 8mm;
           }
           body {
             padding: 0;
             background: #ffffff;
           }
+          .no-print {
+            display: none !important;
+          }
           .sheet {
             border: none;
             box-shadow: none;
+            max-width: 100% !important;
+            margin: 0;
           }
           thead {
             display: table-header-group;
           }
-          tr, .detail-card, .workflow-card, .summary-card {
-            page-break-inside: avoid;
+          tr, .detail-card, .workflow-card, .summary-card, .particular-attachment-card, .collage-item {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .bills-collage {
+            display: grid !important;
+          }
+          .collage-single {
+            grid-template-columns: 1fr !important;
+          }
+          .collage-two {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+          }
+          .collage-three {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .collage-many {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+          }
+          .bill-img-wrap img {
+            max-height: 240px !important;
           }
         }
       </style>
+      <style id="orientation-style">
+        @page { size: A4 portrait; margin: 8mm; }
+      </style>
     </head>
     <body>
+      <!-- Top Action Bar (hidden when printing) -->
+      <div class="no-print" style="position: sticky; top: 0; z-index: 9999; background: #0f172a; color: #ffffff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 16px rgba(0,0,0,0.2); margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-weight: 700; font-size: 14px;">${escapeHtml(company.displayName)} Expense Claim</span>
+          <span style="font-size: 11px; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 12px; font-weight: 600;">
+            PDF / Print Preview
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-toggle-orientation" onclick="toggleOrientation()" style="cursor: pointer; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; transition: background 0.15s;">
+            🔄 Toggle Landscape / Portrait
+          </button>
+          <button onclick="window.print()" style="cursor: pointer; background: #2563eb; border: none; color: #ffffff; font-size: 12px; font-weight: 700; padding: 7px 16px; border-radius: 8px; box-shadow: 0 2px 6px rgba(37,99,235,0.4);">
+            🖨️ Print / Save as PDF
+          </button>
+          <button onclick="window.close()" style="cursor: pointer; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; font-size: 12px; padding: 6px 10px; border-radius: 8px;">
+            ✕ Close
+          </button>
+        </div>
+      </div>
+
       <div class="sheet">
         <section class="header">
           <div class="brand">
@@ -669,6 +814,41 @@ export const buildExpensePrintHtml = ({
           </div>
         </footer>
       </div>
+
+      <script>
+        function toggleOrientation() {
+          var style = document.getElementById('orientation-style');
+          var isLandscape = style.innerHTML.includes('landscape');
+          var btn = document.getElementById('btn-toggle-orientation');
+          if (isLandscape) {
+            style.innerHTML = '@page { size: A4 portrait; margin: 8mm; } .sheet { max-width: 860px !important; }';
+            document.body.classList.remove('landscape-mode');
+            if (btn) btn.innerHTML = '🔄 Toggle Landscape';
+          } else {
+            style.innerHTML = '@page { size: A4 landscape; margin: 8mm; } .sheet { max-width: 1140px !important; }';
+            document.body.classList.add('landscape-mode');
+            if (btn) btn.innerHTML = '🔄 Toggle Portrait';
+          }
+        }
+
+        window.addEventListener('load', function() {
+          var images = Array.from(document.images);
+          var promises = images.map(function(img) {
+            if (img.complete) return Promise.resolve();
+            return new Promise(function(resolve) {
+              img.onload = resolve;
+              img.onerror = resolve;
+            });
+          });
+
+          Promise.all(promises).then(function() {
+            setTimeout(function() {
+              window.focus();
+              window.print();
+            }, 400);
+          });
+        });
+      </script>
     </body>
   </html>`;
 };
