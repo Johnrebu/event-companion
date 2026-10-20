@@ -16,7 +16,6 @@ import { useState } from "react";
 
 const navItems = [
     { path: "/", label: "Home", icon: Home },
-    { path: "/ascend", label: "The Ascend", icon: Sparkles },
     { path: "/expenses", label: "Expenses", icon: FileSpreadsheet },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/sop", label: "Pre-Event", icon: ClipboardCheck },
