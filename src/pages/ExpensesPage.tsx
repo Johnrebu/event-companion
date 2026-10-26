@@ -56,35 +56,44 @@ const sanitizeFileNamePart = (value: string) =>
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
 
-const persistableBillUrl = (url?: string) =>
-  url?.startsWith("data:") || url?.startsWith("blob:") ? undefined : url;
+const sanitizeItemBills = (item: ExpenseItem): ExpenseBill[] => {
+  const itemBills: ExpenseBill[] =
+    item.bills && item.bills.length > 0
+      ? item.bills
+      : item.billFileName || item.billUrl
+        ? [
+            {
+              file: (item.billAttached as File) || (undefined as any),
+              fileName: item.billFileName || "Attached Bill",
+              url: item.billUrl,
+              size: 0,
+            },
+          ]
+        : [];
 
-const saveExpenseDraft = (storageKey: string, report: ExpenseDraftState & { savedAt: string; companySlug: string }) => {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(report));
-    return true;
-  } catch {
-    const compactReport = {
-      ...report,
-      items: report.items.map((item) => ({
-        ...item,
-        billAttached: null,
-        billUrl: persistableBillUrl(item.billUrl),
-        bills: item.bills?.map((bill) => ({
-          fileName: bill.fileName,
-          size: bill.size,
-          url: persistableBillUrl(bill.url),
-        })),
-      })),
-    };
-
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(compactReport));
-      return true;
-    } catch {
-      return false;
-    }
+  if (itemBills.length <= 1) {
+    return itemBills;
   }
+
+  // Multi-bill validation: detect if subsequent bills were erroneously poisoned
+  // with the first bill's URL by the previous bug
+  const firstBillUrl = itemBills[0]?.url;
+  const firstBillName = itemBills[0]?.fileName;
+
+  return itemBills.map((bill, bIdx) => {
+    if (
+      bIdx > 0 &&
+      bill.url &&
+      firstBillUrl &&
+      bill.url === firstBillUrl &&
+      bill.fileName &&
+      bill.fileName !== firstBillName
+    ) {
+      // Clear poisoned duplicate URL
+      return { ...bill, url: undefined };
+    }
+    return bill;
+  });
 };
 
 const createEmptyItem = (sNo: number): ExpenseItem => ({
@@ -126,32 +135,32 @@ const normalizeEventDetails = (details?: Partial<EventDetails>): EventDetails =>
 const ensureBillsHaveUrls = async (items: ExpenseItem[]): Promise<ExpenseItem[]> => {
   return Promise.all(
     items.map(async (item) => {
-      const itemBills =
-        item.bills && item.bills.length > 0
-          ? item.bills
-          : item.billFileName || item.billUrl
-            ? [
-                {
-                  file: (item.billAttached as File) || (undefined as any),
-                  fileName: item.billFileName || "Attached Bill",
-                  url: item.billUrl,
-                  size: 0,
-                },
-              ]
-            : [];
+      const itemBills = sanitizeItemBills(item);
 
       if (itemBills.length === 0) {
         return item;
       }
 
+      const firstBillName = itemBills[0]?.fileName;
+      const firstBillUrl = itemBills[0]?.url;
+
       const updatedBills = await Promise.all(
-        itemBills.map(async (bill) => {
-          // 1. If bill already has data URL or http URL, it's ready
-          if (bill.url && (bill.url.startsWith("data:") || bill.url.startsWith("http"))) {
-            return bill;
+        itemBills.map(async (bill, bIdx) => {
+          let currentUrl = bill.url;
+
+          // Detect poisoned duplicate
+          if (
+            bIdx > 0 &&
+            currentUrl &&
+            firstBillUrl &&
+            currentUrl === firstBillUrl &&
+            bill.fileName &&
+            bill.fileName !== firstBillName
+          ) {
+            currentUrl = undefined;
           }
 
-          // 2. If bill.file is available, convert file to data URL
+          // 1. If bill.file is available, ALWAYS convert file to data URL
           if (bill.file instanceof File || bill.file instanceof Blob) {
             try {
               const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -166,10 +175,15 @@ const ensureBillsHaveUrls = async (items: ExpenseItem[]): Promise<ExpenseItem[]>
             }
           }
 
+          // 2. If bill already has valid distinct data URL or http URL, it's ready
+          if (currentUrl && (currentUrl.startsWith("data:") || currentUrl.startsWith("http"))) {
+            return { ...bill, url: currentUrl };
+          }
+
           // 3. If bill.url is a blob: URL, fetch and convert to base64 data URL
-          if (bill.url && bill.url.startsWith("blob:")) {
+          if (currentUrl && currentUrl.startsWith("blob:")) {
             try {
-              const res = await fetch(bill.url);
+              const res = await fetch(currentUrl);
               const blob = await res.blob();
               const dataUrl = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
@@ -183,19 +197,20 @@ const ensureBillsHaveUrls = async (items: ExpenseItem[]): Promise<ExpenseItem[]>
             }
           }
 
-          // 4. Fallback to item.billUrl if available
-          if (item.billUrl && !bill.url) {
+          // 4. Fallback to item.billUrl ONLY if there is exactly 1 bill in this item (legacy single-bill item)
+          if (itemBills.length === 1 && item.billUrl && !currentUrl) {
             return { ...bill, url: item.billUrl };
           }
 
-          return bill;
+          // In multi-bill items, NEVER copy item.billUrl (Bill #1) onto other bills!
+          return { ...bill, url: currentUrl };
         }),
       );
 
       return {
         ...item,
         bills: updatedBills,
-        billUrl: updatedBills[0]?.url || item.billUrl,
+        billUrl: updatedBills[0]?.url || undefined,
       };
     }),
   );
@@ -213,24 +228,13 @@ const createInitialState = (storageKey: string): ExpenseDraftState => {
         items:
           data.items?.length > 0
             ? data.items.map((item: ExpenseItem) => {
-                const itemBills =
-                  item.bills && item.bills.length > 0
-                    ? item.bills
-                    : item.billFileName
-                      ? [
-                          {
-                            fileName: item.billFileName,
-                            url: item.billUrl,
-                            size: 0,
-                          },
-                        ]
-                      : [];
+                const itemBills = sanitizeItemBills(item);
 
                 return {
                   ...item,
                   billAttached: null,
                   billFileName: item.billFileName || itemBills[0]?.fileName || "",
-                  billUrl: item.billUrl || itemBills[0]?.url || undefined,
+                  billUrl: itemBills[0]?.url || undefined,
                   bills: itemBills,
                 };
               })
@@ -272,24 +276,13 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
           }
           if (saved.items && saved.items.length > 0) {
             const loadedItems = saved.items.map((item: ExpenseItem) => {
-              const itemBills =
-                item.bills && item.bills.length > 0
-                  ? item.bills
-                  : item.billFileName
-                    ? [
-                        {
-                          fileName: item.billFileName,
-                          url: item.billUrl,
-                          size: 0,
-                        },
-                      ]
-                    : [];
+              const itemBills = sanitizeItemBills(item);
 
               return {
                 ...item,
                 billAttached: null,
                 billFileName: item.billFileName || itemBills[0]?.fileName || "",
-                billUrl: item.billUrl || itemBills[0]?.url || undefined,
+                billUrl: itemBills[0]?.url || undefined,
                 bills: itemBills,
               };
             });

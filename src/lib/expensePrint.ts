@@ -227,12 +227,20 @@ export const buildExpensePrintHtml = ({
                     <div class="bills-collage ${collageClass}">
                       ${bills
                         .map((bill, bIdx) => {
+                          const isFalseDuplicate =
+                            bIdx > 0 &&
+                            Boolean(bill.url) &&
+                            bill.url === bills[0]?.url &&
+                            bill.fileName !== bills[0]?.fileName;
+
+                          const effectiveUrl = isFalseDuplicate ? undefined : bill.url;
+
                           const isImage =
-                            bill.url?.startsWith("data:image/") ||
+                            effectiveUrl?.startsWith("data:image/") ||
                             /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(bill.fileName);
 
                           const isPdf =
-                            bill.url?.startsWith("data:application/pdf") ||
+                            effectiveUrl?.startsWith("data:application/pdf") ||
                             /\.pdf$/i.test(bill.fileName);
 
                           return `
@@ -255,13 +263,13 @@ export const buildExpensePrintHtml = ({
                               <!-- Preview Body -->
                               <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 180px;">
                                 ${
-                                  isImage && bill.url
+                                  isImage && effectiveUrl
                                     ? `
                                   <div class="bill-img-wrap" style="width: 100%; text-align: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-                                    <img src="${bill.url}" alt="${escapeHtml(bill.fileName)}" style="max-width: 100%; max-height: ${billCount === 1 ? "420px" : "280px"}; width: auto; height: auto; object-fit: contain; border-radius: 6px;" />
+                                    <img src="${effectiveUrl}" alt="${escapeHtml(bill.fileName)}" style="max-width: 100%; max-height: ${billCount === 1 ? "420px" : "280px"}; width: auto; height: auto; object-fit: contain; border-radius: 6px;" />
                                   </div>
                                 `
-                                    : isPdf && bill.url
+                                    : isPdf && effectiveUrl
                                       ? `
                                   <div style="width: 100%; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 18px 12px; text-align: center;">
                                     <div style="font-size: 34px; margin-bottom: 4px;">📄</div>
@@ -272,7 +280,7 @@ export const buildExpensePrintHtml = ({
                                       PDF document attached
                                     </div>
                                     <div style="margin-top: 10px;">
-                                      <a href="${bill.url}" download="${escapeHtml(bill.fileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 6px; text-decoration: none;">
+                                      <a href="${effectiveUrl}" download="${escapeHtml(bill.fileName)}" style="display: inline-block; background: #0284c7; color: #ffffff; font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 6px; text-decoration: none;">
                                         View / Download PDF
                                       </a>
                                     </div>
@@ -287,11 +295,10 @@ export const buildExpensePrintHtml = ({
                                     <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
                                       Attached supporting receipt ${bill.size ? `(${formatSize(bill.size)})` : ""}
                                     </div>
-                                    ${
-                                      bill.url
+                                    ${effectiveUrl
                                         ? `
-                                      <div style="margin-top: 8px;">
-                                        <a href="${bill.url}" download="${escapeHtml(bill.fileName || "attached-bill")}" style="display: inline-block; background: #0f172a; color: #ffffff; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-decoration: none;">
+                                       <div style="margin-top: 8px;">
+                                         <a href="${effectiveUrl}" download="${escapeHtml(bill.fileName || "attached-bill")}" style="display: inline-block; background: #0f172a; color: #ffffff; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-decoration: none;">
                                           View Document
                                         </a>
                                       </div>

@@ -23,40 +23,67 @@ const getDB = (): Promise<IDBDatabase> => {
     };
 
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      dbPromise = null;
+      reject(request.error);
+    };
   });
 
   return dbPromise;
 };
 
+// Strips non-serializable DOM File instances before storage so IndexedDB cloning never fails
+const sanitizeForStorage = (data: any) => {
+  if (!data || !Array.isArray(data.items)) return data;
+
+  return {
+    ...data,
+    items: data.items.map((item: any) => ({
+      ...item,
+      billAttached: null,
+      bills: (item.bills || []).map((b: any) => ({
+        fileName: b.fileName,
+        size: b.size,
+        url: b.url, // Preserve genuine distinct URL for every single bill
+      })),
+    })),
+  };
+};
+
 export async function saveExpenseDraftToStorage(key: string, data: any): Promise<void> {
-  // Always attempt to save to IndexedDB first (handles large base64 images without 5MB limit)
+  const cleanData = sanitizeForStorage(data);
+
+  // 1. Always attempt to save to IndexedDB first (handles large base64 images without 5MB limit)
   try {
     const db = await getDB();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
-      const req = store.put({ key, data, updatedAt: new Date().toISOString() });
+      const req = store.put({ key, data: cleanData, updatedAt: new Date().toISOString() });
       req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error || tx.error);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
   } catch (error) {
     console.warn("IndexedDB save failed, falling back to localStorage:", error);
   }
 
-  // Also save a lightweight version to localStorage as fallback
+  // 2. Also save a lightweight version to localStorage as fallback
   try {
-    const serialized = JSON.stringify(data);
+    const serialized = JSON.stringify(cleanData);
     localStorage.setItem(key, serialized);
-  } catch (error) {
+  } catch {
     // If quota exceeded, strip heavy data URLs for localStorage fallback
     try {
-      if (data && Array.isArray(data.items)) {
+      if (cleanData && Array.isArray(cleanData.items)) {
         const lightweight = {
-          ...data,
-          items: data.items.map((item: any) => ({
+          ...cleanData,
+          items: cleanData.items.map((item: any) => ({
             ...item,
             billAttached: null,
+            // CRITICAL: Clear item.billUrl so legacy field does NOT hold Bill #1's image while other bills are empty
+            billUrl: undefined,
             bills: (item.bills || []).map((b: any) => ({
               fileName: b.fileName,
               size: b.size,
@@ -81,7 +108,8 @@ export async function loadExpenseDraftFromStorage(key: string): Promise<any | nu
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(key);
       req.onsuccess = () => resolve(req.result ? req.result.data : null);
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error || tx.error);
+      tx.onerror = () => reject(tx.error);
     });
 
     if (result) return result;
