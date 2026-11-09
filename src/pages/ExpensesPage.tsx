@@ -2,18 +2,30 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowRight,
+  Clock,
   Download,
   FileText,
+  History,
   Printer,
+  Receipt,
+  RotateCcw,
   Save,
   ShieldCheck,
   Sparkles,
   Workflow,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import EventHeader from "@/components/EventHeader";
 import ExpenseTable from "@/components/ExpenseTable";
 import TotalSummary from "@/components/TotalSummary";
@@ -24,6 +36,9 @@ import { buildExpensePrintHtml } from "@/lib/expensePrint";
 import {
   saveExpenseDraftToStorage,
   loadExpenseDraftFromStorage,
+  findOtherSavedDrafts,
+  hasMeaningfulContent,
+  type AvailableDraftInfo,
 } from "@/lib/expenseDraftStorage";
 import {
   DEFAULT_EXPENSE_COMPANY_SLUG,
@@ -33,7 +48,7 @@ import {
   getExpenseDraftStorageKey,
   type ExpenseCompany,
 } from "@/lib/expenseCompanies";
-import { ExpenseItem, EventDetails } from "@/types/expense";
+import { ExpenseItem, ExpenseBill, EventDetails } from "@/types/expense";
 
 type ExpenseDraftState = {
   eventDetails: EventDetails;
@@ -253,6 +268,13 @@ const createInitialState = (storageKey: string): ExpenseDraftState => {
   };
 };
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(value);
+
 const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
   const storageKey = getExpenseDraftStorageKey(company.slug);
   const [initialState] = useState<ExpenseDraftState>(() => createInitialState(storageKey));
@@ -262,6 +284,9 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
   const [gstPercentage, setGstPercentage] = useState(initialState.gstPercentage);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [otherDrafts, setOtherDrafts] = useState<AvailableDraftInfo[]>([]);
+  const [isDismissedDraftAlert, setIsDismissedDraftAlert] = useState(false);
+  const [isDraftRecoveryOpen, setIsDraftRecoveryOpen] = useState(false);
 
   // Asynchronously load rich draft from IndexedDB on mount
   useEffect(() => {
@@ -297,6 +322,12 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       } finally {
         if (isMounted) {
           setIsInitialized(true);
+          // Look for saved drafts across other company entities or automatic backups
+          findOtherSavedDrafts(storageKey).then((drafts) => {
+            if (isMounted) {
+              setOtherDrafts(drafts);
+            }
+          });
         }
       }
     };
@@ -346,8 +377,53 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
       companySlug: company.slug,
     };
 
-    await saveExpenseDraftToStorage(storageKey, report);
-    toast.success("Draft saved successfully with attached bills!");
+    await saveExpenseDraftToStorage(storageKey, report, { isExplicitSave: true });
+    findOtherSavedDrafts(storageKey).then((drafts) => setOtherDrafts(drafts));
+    toast.success("Draft saved successfully with attached bills and backup copy!");
+  };
+
+  const handleRestoreDraft = (draft: AvailableDraftInfo) => {
+    if (!draft?.data) return;
+    const restoredEventDetails = normalizeEventDetails(draft.data.eventDetails);
+    const restoredItems = (draft.data.items || []).map((item: ExpenseItem) => {
+      const itemBills = sanitizeItemBills(item);
+      return {
+        ...item,
+        billAttached: null,
+        billFileName: item.billFileName || itemBills[0]?.fileName || "",
+        billUrl: itemBills[0]?.url || undefined,
+        bills: itemBills,
+      };
+    });
+
+    setEventDetails(restoredEventDetails);
+    setItems(
+      restoredItems.length > 0
+        ? restoredItems
+        : [createEmptyItem(1), createEmptyItem(2), createEmptyItem(3)],
+    );
+    if (draft.data.gstPercentage !== undefined) {
+      setGstPercentage(draft.data.gstPercentage);
+    }
+
+    // Save immediately under current entity key so it's permanently stored here
+    saveExpenseDraftToStorage(
+      storageKey,
+      {
+        eventDetails: restoredEventDetails,
+        items: restoredItems,
+        gstPercentage: draft.data.gstPercentage ?? 18,
+        companySlug: company.slug,
+        savedAt: new Date().toISOString(),
+      },
+      { isExplicitSave: true },
+    );
+
+    setIsDraftRecoveryOpen(false);
+    setIsDismissedDraftAlert(true);
+    toast.success(
+      `Restored draft from ${draft.sourceLabel} with ${draft.itemCount} items and ${draft.billCount} bills into ${company.displayName}!`,
+    );
   };
 
   const handleExport = () => {
@@ -637,7 +713,91 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
 
           <EventHeader eventDetails={eventDetails} onChange={setEventDetails} company={company} />
 
+          {/* Smart Draft Recovery Alert */}
+          {otherDrafts.length > 0 && !hasMeaningfulContent({ eventDetails, items }) && !isDismissedDraftAlert && (
+            <div className="rounded-2xl border border-blue-500/30 bg-blue-50/90 dark:bg-blue-950/40 p-4 shadow-md backdrop-blur-sm transition-all">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-blue-600/10 p-2.5 text-blue-600 dark:text-blue-400 shrink-0">
+                    <History className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-bold text-sm text-foreground">
+                        Saved Draft Found in {otherDrafts[0].sourceLabel}
+                      </h4>
+                      <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+                        {otherDrafts[0].itemCount} items · {otherDrafts[0].billCount} bills attached
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                      {otherDrafts[0].eventName && otherDrafts[0].eventName !== "Untitled Event"
+                        ? `Event: "${otherDrafts[0].eventName}" · `
+                        : ""}
+                      Total: {formatCurrency(otherDrafts[0].totalExpenses)}
+                      {otherDrafts[0].updatedAt
+                        ? ` · Saved ${new Date(otherDrafts[0].updatedAt).toLocaleDateString("en-IN", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}`
+                        : ""}
+                      . Would you like to copy these attached bills and line items into {company.displayName}?
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => handleRestoreDraft(otherDrafts[0])}
+                    className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs h-9 px-3"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Copy into {company.displayName}
+                  </Button>
+                  {otherDrafts[0].companySlug && (
+                    <Link to={getExpenseCompanyPath(otherDrafts[0].companySlug as any)}>
+                      <Button size="sm" variant="outline" className="text-xs h-9 px-3">
+                        Switch to {otherDrafts[0].sourceLabel}
+                      </Button>
+                    </Link>
+                  )}
+                  {otherDrafts.length > 1 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsDraftRecoveryOpen(true)}
+                      className="text-xs h-9 px-3"
+                    >
+                      View All ({otherDrafts.length})
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsDismissedDraftAlert(true)}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    title="Dismiss alert"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:justify-end md:gap-3">
+            {otherDrafts.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setIsDraftRecoveryOpen(true)}
+                className="h-10 w-full justify-center gap-2 px-3 text-xs md:text-sm sm:w-auto md:px-4 border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+              >
+                <History className="h-4 w-4" />
+                Saved Drafts & Backups ({otherDrafts.length})
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={handleSaveDraft}
@@ -681,6 +841,73 @@ const ExpenseWorkspace = ({ company }: { company: ExpenseCompany }) => {
           </div>
         </div>
       </div>
+
+      {/* Draft Recovery & Backups Modal */}
+      <Dialog open={isDraftRecoveryOpen} onOpenChange={setIsDraftRecoveryOpen}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <History className="h-5 w-5 text-primary" />
+              Saved Drafts & Automatic Backups
+            </DialogTitle>
+            <DialogDescription>
+              Your attached bills and line items are automatically safeguarded. You can view or restore any draft from another entity or previous session into {company.displayName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-3">
+            {otherDrafts.map((d, index) => (
+              <div
+                key={d.key || index}
+                className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-card/80 p-4 shadow-sm transition-colors hover:bg-card sm:flex-row sm:items-center"
+              >
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">{d.sourceLabel}</span>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                      {d.itemCount} items
+                    </span>
+                    {d.billCount > 0 && (
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <Receipt className="h-3 w-3" />
+                        {d.billCount} bills attached
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {d.eventName && d.eventName !== "Untitled Event" ? `Event: "${d.eventName}" · ` : ""}
+                    Expenses: {formatCurrency(d.totalExpenses)}
+                    {d.updatedAt
+                      ? ` · Saved ${new Date(d.updatedAt).toLocaleString("en-IN", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}`
+                      : ""}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleRestoreDraft(d)}
+                    className="h-9 gap-1.5 px-3 text-xs"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Load into {company.displayName}
+                  </Button>
+                  {d.companySlug && (
+                    <Link to={getExpenseCompanyPath(d.companySlug as any)}>
+                      <Button size="sm" variant="outline" className="h-9 px-3 text-xs">
+                        Open {d.sourceLabel}
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {!isCalculatorOpen && <CalculatorButton onClick={() => setIsCalculatorOpen(true)} />}
 
