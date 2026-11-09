@@ -176,13 +176,13 @@ const ensureBillsHaveUrls = async (items: ExpenseItem[]): Promise<ExpenseItem[]>
           }
 
           // 1. If bill.file is available, ALWAYS convert file to data URL
-          if (bill.file instanceof File || bill.file instanceof Blob) {
+          if ((bill.file as unknown) instanceof File || (bill.file as unknown) instanceof Blob) {
             try {
               const dataUrl = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result as string);
                 reader.onerror = reject;
-                reader.readAsDataURL(bill.file as File);
+                reader.readAsDataURL(bill.file as unknown as File);
               });
               return { ...bill, url: dataUrl };
             } catch (err) {
